@@ -467,17 +467,21 @@ if __name__ == "__main__":
     # Display connectopy 0 dimension
     pyplot.figure(2)
     x_index = 21
-    z_index = 60
-    coords_brain = numpy.where(brain_mask[x_index, :, :])
+    z_index = 70
+
+    coords_brain = numpy.where(brain_mask[:, :, z_index])
     pyplot.scatter(coords_brain[0], coords_brain[1], c='w')
+
     pyplot.hold(True)
-    coords_mask = numpy.where(roi_mask[x_index, :, :])
-    cmap = pyplot.get_cmap('inferno')
+
+    coords_mask = numpy.where(roi_mask[:, :, z_index])
+    cmap = pyplot.get_cmap('jet')
     min_mask = numpy.min(embedding[:, 0])
     max_mask = numpy.max(embedding[:, 0])
-    clrs_mask = cmap((embedding[:, 0] - min_mask) / (max_mask - min_mask))
+    idx_cmap = (embedding[:, 0] - min_mask) / (max_mask - min_mask)
+    clrs_mask = cmap(idx_cmap)
     pyplot.scatter(coords_mask[0], coords_mask[1], c=clrs_mask)
+
     pyplot.title("ROI connectopies")
     pyplot.legend(("Brain mask", "ROI connectopies"))
-
     pyplot.show()
