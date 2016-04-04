@@ -1,5 +1,3 @@
-import sys
-import time
 import os
 import nibabel
 import numpy
@@ -9,86 +7,40 @@ from sklearn import manifold
 from scipy.sparse import csgraph
 
 from matplotlib import pyplot
-import seaborn
 
 
-def compute_fingerprints(data_in_roi, data, idxs_chunk=None):
-    """ Compute fingerprints for each voxel time-series in the ROI
-        and each connectopy in the reprojecetd out-of-ROI voxels.
+def compute_similarity_map(fingerprints, idx_chunk=None):
+    """
+    Compute the eta2 coefficients from the voxels' fingerprints as described
+    in "Defining functional areas in individual human brains using resting
+    functional connectivity MRI". The result is a symmetric square matrix
+    where each element is a real value in the range 0.0 to 1.0 with 0
+    indicating the pair of voxels is completely dissimilar and 1 equals.
 
     Parameters
     ----------
-    data_in_roi: numpy.ndarray (n_timeseries, n_variables)
-        Voxels which fingerprints have to be computed. Each voxel's
-        time-serie is represented by a column in data_in_roi.
+    fingerprints : numpy.ndarray, shape (n_voxels_in_roi, n_voxels_svd)
+        Boolean 3-dimensional numpy array with the same dimensions of a
+        single frame of the nifti image provided as input. Voxels
+        marked as True are part of the same region of interest (ROI).
 
-    data: numpy.ndarray (n_timeseries, n_svd_variables)
-        Voxels out of the ROI used for computing the fingerprints.
-
-    idxs_chunk: numpy.ndarray, default None
-        Indexes of the voxel in the data_in_roi array at which
-        to compute the fingerprints. If None it takes all
-        voxels in data_in_roi.
-
-    Returns
-    -------
-    fp_chunks: numpy.ndarray
-        Computed fingerprints for this chunk of data.
-
+    idx_chunk : numpy.ndarray, shape (K, ), (default: None)
+        Indexes of the in-ROI voxels to consider when computing the eta2
+        coefficients. If None all n_voxels_in_roi are considered.
     """
 
-    if idxs_chunk is None:
-        idxs_chunk = numpy.arange(data_in_roi.shape[1])
+    num_voxels_in_chunk = idx_chunk.shape[0]
+    num_voxels_in_roi = fingerprints.shape[0]
+    num_voxels_out_roi = fingerprints.shape[1]
 
-    num_voxels_chunk = len(idxs_chunk)
-    fingerprints = numpy.zeros((num_voxels_chunk, data.shape[1]))
-
-    progress_old = -1
-
-    # Compute out of ROI data variance
-    data_mus = numpy.mean(data, axis=0)
-    data_demean = data - data_mus[numpy.newaxis, :]
-    data_var = numpy.mean(data_demean * data_demean, axis=0)
-
-    # Compute in ROI data variance
-    data_in_roi_mus = numpy.mean(data_in_roi[:, idxs_chunk], axis=0)
-    data_in_roi_demean = data_in_roi[:, idxs_chunk] - data_in_roi_mus[numpy.newaxis, :]
-    data_in_roi_var = numpy.mean(data_in_roi_demean * data_in_roi_demean, axis=0)
-
-    for i_chunk in range(num_voxels_chunk):
-
-        # Compute covariance between one in ROI time-series
-        # and out of ROI time-series
-        data_voxel_demean = data_in_roi_demean[:, i_chunk]
-        data_voxel_demean = numpy.repeat(data_voxel_demean[:, numpy.newaxis],
-                                         data_demean.shape[1], axis=1)
-        data_cov = numpy.mean(data_voxel_demean * data_demean, axis=0)
-
-        data_data_in_roi_cov = numpy.sqrt(data_in_roi_var[i_chunk] * data_var)
-        
-        fingerprints[i_chunk, :] = data_cov / data_data_in_roi_cov
-
-        progress = int(i_chunk * 100 / num_voxels_chunk)
-
-        if progress > progress_old:
-            print("\rComputing fingerprints... {0}%".format(progress),
-                  end="", flush=True)
-            progress_old = progress
-
-    return fingerprints
-
-
-def compute_similarity_map(idx_chunk, fingerprints):
+    if idx_chunk is None:
+        idx_chunk = numpy.arange(0, num_voxels_in_roi)
 
     # Similarity maps
     def sum_coeff(fp_0, fp_1, fp_mean):
         return numpy.sum((fp_0 - fp_mean)**2 + (fp_1 - fp_mean)**2, axis=1)
 
     progress_old = -1
-
-    num_voxels_in_chunk = idx_chunk.shape[0]
-    num_voxels_in_roi = fingerprints.shape[0]
-    num_voxels_out_roi = fingerprints.shape[1]
 
     eta2_coef = numpy.zeros((num_voxels_in_chunk, num_voxels_in_roi))
 
@@ -294,7 +246,7 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
                                   int(idxs_fingerprint[idx+1]))
                      for idx in range(len(idxs_fingerprint)-1)]
 
-        starmap_input = [(idx, fingerprints) for idx in idxs_pool]
+        starmap_input = [(fingerprints, idx) for idx in idxs_pool]
 
         # Run compute_similarity_map in parallel
         eta2_chunks = pool.starmap(compute_similarity_map, starmap_input)
@@ -399,7 +351,23 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
     if os.path.isfile(filename_connectopic_map):
         connectopic_map = numpy.load(filename_connectopic_map)
     else:
-        connectopic_map = manifold.spectral_embedding(eta2_coef, n_components=1, norm_laplacian=False)
+
+        manifold_tsne = manifold.TSNE(n_components=1,
+                                      perplexity=30.0,
+                                      early_exaggeration=4.0,
+                                      learning_rate=1000.0,
+                                      n_iter=1000,
+                                      n_iter_without_progress=30,
+                                      min_grad_norm=1e-07,
+                                      metric='euclidean',
+                                      init='random',
+                                      verbose=0,
+                                      random_state=None,
+                                      method='barnes_hut',
+                                      angle=0.5)
+
+        connectopic_map = manifold_tsne.fit_transform(eta2_coef)
+
         numpy.save(filename_connectopic_map, connectopic_map)
 
     print("\rSpectral embedding... Done!",
@@ -467,7 +435,7 @@ if __name__ == "__main__":
     # Display connectopy 0 dimension
     pyplot.figure(2)
     x_index = 21
-    z_index = 70
+    z_index = 40
 
     coords_brain = numpy.where(brain_mask[:, :, z_index])
     pyplot.scatter(coords_brain[0], coords_brain[1], c='w')
