@@ -221,59 +221,55 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
 
     # Get first t-1 principal components (where t is the number of
     # time frames)
-    num_features = data_out_roi.shape[0] - 1
+    num_voxels_svd = data_out_roi.shape[0] - 1
 
-    filename_data_svd = 'data_svd.npy'
-    if os.path.isfile(filename_data_svd):
-        data_svd = numpy.load(filename_data_svd)
+    num_voxels_in_roi = data_in_roi.shape[1]
+    num_voxels_out_roi = data_out_roi.shape[1]
+
+    filename_data_s = 'data_s.npy'
+    filename_data_v = 'data_v.npy'
+
+    if os.path.isfile(filename_data_v):
+        data_v = numpy.load(filename_data_v)
+        data_s = numpy.load(filename_data_s)
     else:
 
         # Demean data
         data_out_roi_mean = numpy.mean(data_out_roi, axis=0)
         data_out_roi_demean = data_out_roi - data_out_roi_mean
 
-        u, s, v = numpy.linalg.svd(data_out_roi_demean, full_matrices=False)
-        #data_svd = numpy.dot(u[:, :num_features], numpy.diag(s[:num_features]))
-        data_svd = u[:, :num_features]
-        numpy.save(filename_data_svd, data_svd)
+        data_in_roi_mean = numpy.mean(data_in_roi, axis=0)
+        data_in_roi_demean = data_in_roi - data_in_roi_mean
+
+        data = numpy.hstack((data_in_roi_demean, data_out_roi_demean))
+
+        data_u, data_s, data_v = numpy.linalg.svd(data, full_matrices=False)
+
+        # Store data
+        numpy.save(filename_data_s, data_s)
+        numpy.save(filename_data_v, data_v)
 
     print("\rDimensionality reduction... Done!",
           flush=True)
 
-    # Compute voxels fingerprints as Pearson correlation between ROI
-    # time-series and out-of-ROI reprojected time-series
-    num_voxels_in_roi = data_in_roi.shape[1]
-    num_voxels_out_roi = data_out_roi.shape[1]
-    num_voxels_svd = data_svd.shape[1]
-
-    print("Computing fingerprints...",
-          end="", flush=True)
-
+    # TEST
     numpy.save('data_in_roi.npy', data_in_roi)
     numpy.save('data_out_roi.npy', data_out_roi)
+
+    # Compute voxels fingerprints as Pearson correlation between ROI
+    # time-series and out-of-ROI reprojected time-series
+    print("Computing fingerprints...",
+          end="", flush=True)
 
     filename_fingerprints = 'fingerprints.npy'
     if os.path.isfile(filename_fingerprints):
         fingerprints = numpy.load(filename_fingerprints)
     else:
-        # Distribute load equally among all CPUs
-        pool = multiprocessing.Pool(num_cpu)
 
-        # Approximation of the optimal fraction of the dataset to
-        # allocate to each CPU
-        idxs_pool = [numpy.arange(int(idx/num_cpu * num_voxels_in_roi),
-                                  int((idx+1)/num_cpu * num_voxels_in_roi))
-                     for idx in range(num_cpu)]
-
-        starmap_input = [(data_in_roi, data_svd, idx) for idx in idxs_pool]
-
-        # Run compute_similarity_map in parallel
-        fingerprints_chunks = pool.starmap(compute_fingerprints, starmap_input)
-
-        # Merge together results
-        fingerprints = numpy.zeros((num_voxels_in_roi, num_voxels_svd))
-        for i_cpu in range(num_cpu):
-            fingerprints[idxs_pool[i_cpu], :] = fingerprints_chunks[i_cpu]
+        data_s_diag = numpy.diag(data_s[:num_voxels_svd])
+        data_reprojected = numpy.dot(data_s_diag,
+                                     data_v[:num_voxels_svd, :num_voxels_in_roi])
+        fingerprints = data_reprojected.T
 
         numpy.save(filename_fingerprints, fingerprints)
 
@@ -396,9 +392,15 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
     print("Spectral embedding...",
           end="", flush=True)
 
+    filename_connectopic_map = 'connectopic_map.npy'
+
     # Learn the manifold for this data and reproject the similarity
     # graph on the two most significant connectopies
-    connectopic_map = manifold.spectral_embedding(eta2_coef, n_components=2, norm_laplacian=False)
+    if os.path.isfile(filename_connectopic_map):
+        connectopic_map = numpy.load(filename_connectopic_map)
+    else:
+        connectopic_map = manifold.spectral_embedding(eta2_coef, n_components=1, norm_laplacian=False)
+        numpy.save(filename_connectopic_map, connectopic_map)
 
     print("\rSpectral embedding... Done!",
           end="", flush=True)
