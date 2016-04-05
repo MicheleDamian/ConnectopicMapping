@@ -171,8 +171,10 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
     print("Dimensionality reduction...",
           end="", flush=True)
 
-    # Get first t-1 principal components (where t is the number of
-    # time frames)
+    ###
+    # Get first t-1 components (where t is the number of time frames)
+    ###
+
     num_voxels_svd = data_out_roi.shape[0] - 1
 
     num_voxels_in_roi = data_in_roi.shape[1]
@@ -208,12 +210,16 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
     numpy.save('data_in_roi.npy', data_in_roi)
     numpy.save('data_out_roi.npy', data_out_roi)
 
+    ###
     # Compute voxels fingerprints as Pearson correlation between ROI
     # time-series and out-of-ROI reprojected time-series
+    ###
+
     print("Computing fingerprints...",
           end="", flush=True)
 
     filename_fingerprints = 'fingerprints.npy'
+
     if os.path.isfile(filename_fingerprints):
         fingerprints = numpy.load(filename_fingerprints)
     else:
@@ -232,6 +238,7 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
           end="", flush=True)
 
     filename_eta2_coef = 'eta2_coef.npy'
+
     if os.path.isfile(filename_eta2_coef):
         eta2_coef = numpy.load(filename_eta2_coef)
     else:
@@ -265,11 +272,15 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
     print("\rComputing similarity maps... Done!",
           flush=True)
 
+    ###
     # Similarity of connectivity between pairs of voxels
+    ###
+
     print("Computing L2 distance between voxels...",
           end="", flush=True)
 
     filename_similarity_distance = 'similarity_distance.npy'
+
     if os.path.isfile(filename_similarity_distance):
         similarity_distance = numpy.load(filename_similarity_distance)
     else:
@@ -294,16 +305,19 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
 
     print("\rComputing L2 distance between voxels... Done!", flush=True)
 
+    ###
+    # Binary search a similarity threshold, that is the minimum value
+    # of the L2-norm between pair of voxels' similarities required
+    # such that all the voxels in the ROI are connected.
+    ###
     print("Searching minimum threshold value for connected graph...",
           end="", flush=True)
 
     filename_adjacency = 'adjacency.npy'
+
     if os.path.isfile(filename_adjacency):
         adjacency = numpy.load(filename_adjacency)
     else:
-        # Binary search a similarity threshold, that is the minimum value
-        # of the L2-norm between pair of voxels' similarities required
-        # such that all the voxels in the ROI are connected.
 
         similarity_values = numpy.sort(similarity_distance, axis=None)
         high_index = num_voxels_in_roi**2 - 1
@@ -341,18 +355,21 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
     # Disconnect distant voxels
     eta2_coef[~adjacency] = 0
 
-    print("Spectral embedding...",
+    ###
+    # Learn the manifold for this data and reproject the similarity
+    # graph on the two most significant connectopies
+    ###
+
+    print("tSNE embedding...",
           end="", flush=True)
 
     filename_connectopic_map = 'connectopic_map.npy'
 
-    # Learn the manifold for this data and reproject the similarity
-    # graph on the two most significant connectopies
     if os.path.isfile(filename_connectopic_map):
         connectopic_map = numpy.load(filename_connectopic_map)
     else:
 
-        manifold_tsne = manifold.TSNE(n_components=1,
+        manifold_tsne = manifold.TSNE(n_components=2,
                                       perplexity=30.0,
                                       early_exaggeration=4.0,
                                       learning_rate=1000.0,
@@ -370,7 +387,7 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
 
         numpy.save(filename_connectopic_map, connectopic_map)
 
-    print("\rSpectral embedding... Done!",
+    print("\rtSNE embedding... Done!",
           end="", flush=True)
 
     return connectopic_map, roi_mask
@@ -435,7 +452,7 @@ if __name__ == "__main__":
     # Display connectopy 0 dimension
     pyplot.figure(2)
     x_index = 21
-    z_index = 40
+    z_index = 30
 
     coords_brain = numpy.where(brain_mask[:, :, z_index])
     pyplot.scatter(coords_brain[0], coords_brain[1], c='w')
