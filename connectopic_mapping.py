@@ -1,5 +1,6 @@
 import os
 import nibabel
+import colorsys
 import numpy
 import multiprocessing
 from nilearn import datasets
@@ -272,43 +273,11 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
     print("\rComputing similarity maps... Done!",
           flush=True)
 
-    ###
-    # Similarity of connectivity between pairs of voxels
-    ###
-
-    print("Computing L2 distance between voxels...",
-          end="", flush=True)
-
-    filename_similarity_distance = 'similarity_distance.npy'
-
-    if os.path.isfile(filename_similarity_distance):
-        similarity_distance = numpy.load(filename_similarity_distance)
-    else:
-
-        progress_old = -1
-
-        similarity_distance = numpy.zeros((num_voxels_in_roi, num_voxels_in_roi))
-
-        for i in range(num_voxels_in_roi):
-            for j in range(i+1, num_voxels_in_roi):
-                similarity_distance[i, j] = similarity_distance[j, i] = \
-                    numpy.linalg.norm(eta2_coef[i, :] - eta2_coef[j, :], ord=2)
-
-                progress_new = int(100 * i / num_voxels_in_roi)
-
-                if progress_new > progress_old:
-                    print("\rComputing L2 distance between voxels... {0}%".format(progress_new),
-                          end="", flush=True)
-                    progress_old = progress_new
-
-        numpy.save(filename_similarity_distance, similarity_distance)
-
-    print("\rComputing L2 distance between voxels... Done!", flush=True)
 
     ###
     # Binary search a similarity threshold, that is the minimum value
-    # of the L2-norm between pair of voxels' similarities required
-    # such that all the voxels in the ROI are connected.
+    # of the voxels' similarities required such that all the voxels in
+    # the ROI are connected.
     ###
     print("Searching minimum threshold value for connected graph...",
           end="", flush=True)
@@ -319,10 +288,11 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
         adjacency = numpy.load(filename_adjacency)
     else:
 
-        similarity_values = numpy.sort(similarity_distance, axis=None)
+        similarity_values = numpy.sort(eta2_coef, axis=None)
         high_index = num_voxels_in_roi**2 - 1
         low_index = 0
-        min_threshold = similarity_values[-1]
+        max_threshold = similarity_values[0]
+        n_steps = 0
 
         while True:
 
@@ -330,22 +300,28 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
             similarity_threshold = similarity_values[similarity_index]
 
             # Transform similarity matrix into a connected graph
-            adjacency = similarity_distance < similarity_threshold
+            adjacency = eta2_coef > similarity_threshold
 
             # Find connected components
             num_components, _ = csgraph.connected_components(adjacency,
                                                              directed=False)
 
             if num_components > 1:
-                low_index = similarity_index + 1
-            else:
                 high_index = similarity_index - 1
-                min_threshold = min(min_threshold, similarity_threshold)
+            else:
+                low_index = similarity_index + 1
+                max_threshold = max(max_threshold, similarity_threshold)
 
             if high_index < low_index:
                 break
 
-        adjacency = similarity_distance < min_threshold
+            n_steps += 1
+
+            print('\rSearching minimum threshold value for connected graph... {0}%'
+                  .format(n_steps / numpy.log2(similarity_values.shape[0])),
+                  end="", flush=True)
+
+        adjacency = eta2_coef > max_threshold
 
         numpy.save(filename_adjacency, adjacency)
 
@@ -353,7 +329,7 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
           flush=True)
 
     # Disconnect distant voxels
-    eta2_coef[~adjacency] = 0
+    #eta2_coef[~adjacency] = 0.01
 
     ###
     # Learn the manifold for this data and reproject the similarity
@@ -369,21 +345,23 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
         connectopic_map = numpy.load(filename_connectopic_map)
     else:
 
-        manifold_tsne = manifold.TSNE(n_components=2,
+        distances = 2 * (1 - eta2_coef)
+
+        manifold_tsne = manifold.TSNE(n_components=3,
                                       perplexity=30.0,
                                       early_exaggeration=4.0,
                                       learning_rate=1000.0,
                                       n_iter=1000,
                                       n_iter_without_progress=30,
                                       min_grad_norm=1e-07,
-                                      metric='euclidean',
+                                      metric='precomputed',
                                       init='random',
-                                      verbose=0,
+                                      verbose=1,
                                       random_state=None,
-                                      method='barnes_hut',
+                                      method='exact',
                                       angle=0.5)
 
-        connectopic_map = manifold_tsne.fit_transform(eta2_coef)
+        connectopic_map = manifold_tsne.fit_transform(distances)
 
         numpy.save(filename_connectopic_map, connectopic_map)
 
@@ -452,7 +430,7 @@ if __name__ == "__main__":
     # Display connectopy 0 dimension
     pyplot.figure(2)
     x_index = 21
-    z_index = 30
+    z_index = 80
 
     coords_brain = numpy.where(brain_mask[:, :, z_index])
     pyplot.scatter(coords_brain[0], coords_brain[1], c='w')
@@ -460,12 +438,15 @@ if __name__ == "__main__":
     pyplot.hold(True)
 
     coords_mask = numpy.where(roi_mask[:, :, z_index])
-    cmap = pyplot.get_cmap('jet')
-    min_mask = numpy.min(embedding[:, 0])
-    max_mask = numpy.max(embedding[:, 0])
-    idx_cmap = (embedding[:, 0] - min_mask) / (max_mask - min_mask)
-    clrs_mask = cmap(idx_cmap)
-    pyplot.scatter(coords_mask[0], coords_mask[1], c=clrs_mask)
+
+    # Get voxels color from embedding
+    min_val = numpy.min(embedding, axis=0)
+    max_val = numpy.max(embedding, axis=0)
+    clr_rgb = (embedding - min_val) / (max_val - min_val)
+    pyplot.scatter(coords_mask[0], coords_mask[1],
+                   s=40,
+                   c=clr_rgb,
+                   edgecolors='none')
 
     pyplot.title("ROI connectopies")
     pyplot.legend(("Brain mask", "ROI connectopies"))
