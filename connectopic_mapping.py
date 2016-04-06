@@ -273,64 +273,6 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
     print("\rComputing similarity maps... Done!",
           flush=True)
 
-
-    ###
-    # Binary search a similarity threshold, that is the minimum value
-    # of the voxels' similarities required such that all the voxels in
-    # the ROI are connected.
-    ###
-    print("Searching minimum threshold value for connected graph...",
-          end="", flush=True)
-
-    filename_adjacency = 'adjacency.npy'
-
-    if os.path.isfile(filename_adjacency):
-        adjacency = numpy.load(filename_adjacency)
-    else:
-
-        similarity_values = numpy.sort(eta2_coef, axis=None)
-        high_index = num_voxels_in_roi**2 - 1
-        low_index = 0
-        max_threshold = similarity_values[0]
-        n_steps = 0
-
-        while True:
-
-            similarity_index = int((high_index + low_index) / 2)
-            similarity_threshold = similarity_values[similarity_index]
-
-            # Transform similarity matrix into a connected graph
-            adjacency = eta2_coef > similarity_threshold
-
-            # Find connected components
-            num_components, _ = csgraph.connected_components(adjacency,
-                                                             directed=False)
-
-            if num_components > 1:
-                high_index = similarity_index - 1
-            else:
-                low_index = similarity_index + 1
-                max_threshold = max(max_threshold, similarity_threshold)
-
-            if high_index < low_index:
-                break
-
-            n_steps += 1
-
-            print('\rSearching minimum threshold value for connected graph... {0}%'
-                  .format(n_steps / numpy.log2(similarity_values.shape[0])),
-                  end="", flush=True)
-
-        adjacency = eta2_coef > max_threshold
-
-        numpy.save(filename_adjacency, adjacency)
-
-    print("\rSearching minimum threshold value for connected graph... Done!",
-          flush=True)
-
-    # Disconnect distant voxels
-    #eta2_coef[~adjacency] = 0.01
-
     ###
     # Learn the manifold for this data and reproject the similarity
     # graph on the two most significant connectopies
@@ -429,8 +371,8 @@ if __name__ == "__main__":
 
     # Display connectopy 0 dimension
     pyplot.figure(2)
-    x_index = 21
-    z_index = 80
+    x_index = 13
+    z_index = 74
 
     coords_brain = numpy.where(brain_mask[:, :, z_index])
     pyplot.scatter(coords_brain[0], coords_brain[1], c='w')
@@ -444,7 +386,7 @@ if __name__ == "__main__":
     max_val = numpy.max(embedding, axis=0)
     clr_rgb = (embedding - min_val) / (max_val - min_val)
     pyplot.scatter(coords_mask[0], coords_mask[1],
-                   s=40,
+                   s=50,
                    c=clr_rgb,
                    edgecolors='none')
 
