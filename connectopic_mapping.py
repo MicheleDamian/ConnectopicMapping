@@ -1,11 +1,9 @@
 import os
 import nibabel
-import colorsys
 import numpy
 import multiprocessing
 from nilearn import datasets
 from sklearn import manifold
-from scipy.sparse import csgraph
 
 from matplotlib import pyplot
 
@@ -125,16 +123,14 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
         data_roi = nifti_image[mask, :].T
         return data_roi, idx
 
-    print("Extracting time-series from Nifti image...",
-          end="", flush=True)
+    print("Extracting time-series from Nifti image...", end="", flush=True)
 
     # Voxels/Features in column order
     data_in_roi, idx_in_roi = extract_data(nifti_data, roi_mask * brain_mask)
 
     data_out_roi, idx_out_roi = extract_data(nifti_data, ~roi_mask * brain_mask)
 
-    print("\rExtracting time-series from Nifti image... Done!",
-          flush=True)
+    print("\rExtracting time-series from Nifti image... Done!", flush=True)
 
     zeros_in_roi = numpy.where(numpy.all(data_in_roi == 0, axis=0))[0]
     zeros_out_roi = numpy.where(numpy.all(data_out_roi == 0, axis=0))[0]
@@ -144,8 +140,7 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
     print('Found {0} null time-series in brain mask'.format(len(zeros_out_roi)),
           flush=True)
 
-    print("Removing null time-series from data...",
-          end="", flush=True)
+    print("Removing null time-series from data...", end="", flush=True)
 
     idx_zeros_in_roi = idx_in_roi[:, zeros_in_roi]
     roi_mask[tuple(idx_zeros_in_roi)] = False
@@ -158,28 +153,23 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
     data_out_roi = numpy.delete(data_out_roi, zeros_out_roi, axis=1)
     idx_out_roi = numpy.delete(idx_out_roi, zeros_out_roi, axis=1)
 
-    numpy.save('data_in_roi.npy', data_in_roi)
-    numpy.save('data_out_roi.npy', data_out_roi)
-
-    print("\rRemoving null time-series from data... Done!",
-          flush=True)
+    print("\rRemoving null time-series from data... Done!", flush=True)
 
     print('Number brain voxels = {0}'.format(numpy.sum(brain_mask)),
           flush=True)
     print('Number ROI voxels = {0}'.format(numpy.sum(roi_mask)),
           flush=True)
 
-    print("Dimensionality reduction...",
-          end="", flush=True)
-
-    ###
-    # Get first t-1 components (where t is the number of time frames)
-    ###
-
     num_voxels_svd = data_out_roi.shape[0] - 1
-
     num_voxels_in_roi = data_in_roi.shape[1]
-    num_voxels_out_roi = data_out_roi.shape[1]
+
+    ###
+    #
+    # Get first t-1 components (where t is the number of time frames)
+    #
+    ###
+
+    print("Dimensionality reduction...", end="", flush=True)
 
     filename_data_s = 'data_s.npy'
     filename_data_v = 'data_v.npy'
@@ -204,20 +194,20 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
         numpy.save(filename_data_s, data_s)
         numpy.save(filename_data_v, data_v)
 
-    print("\rDimensionality reduction... Done!",
-          flush=True)
+    print("\rDimensionality reduction... Done!", flush=True)
 
     # TEST
     numpy.save('data_in_roi.npy', data_in_roi)
     numpy.save('data_out_roi.npy', data_out_roi)
 
     ###
+    #
     # Compute voxels fingerprints as Pearson correlation between ROI
     # time-series and out-of-ROI reprojected time-series
+    #
     ###
 
-    print("Computing fingerprints...",
-          end="", flush=True)
+    print("Computing fingerprints...", end="", flush=True)
 
     filename_fingerprints = 'fingerprints.npy'
 
@@ -232,11 +222,9 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
 
         numpy.save(filename_fingerprints, fingerprints)
 
-    print("\rComputing fingerprints... Done!",
-          flush=True)
+    print("\rComputing fingerprints... Done!", flush=True)
 
-    print("Computing similarity maps...",
-          end="", flush=True)
+    print("Computing similarity maps...", end="", flush=True)
 
     filename_eta2_coef = 'eta2_coef.npy'
 
@@ -270,16 +258,16 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
 
         numpy.save(filename_eta2_coef, eta2_coef)
 
-    print("\rComputing similarity maps... Done!",
-          flush=True)
+    print("\rComputing similarity maps... Done!", flush=True)
 
     ###
+    #
     # Learn the manifold for this data and reproject the similarity
     # graph on the two most significant connectopies
+    #
     ###
 
-    print("tSNE embedding...",
-          end="", flush=True)
+    print("tSNE embedding...", flush=True)
 
     filename_connectopic_map = 'connectopic_map.npy'
 
@@ -300,15 +288,13 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
                                       init='random',
                                       verbose=1,
                                       random_state=None,
-                                      method='exact',
-                                      angle=0.5)
+                                      method='exact')
 
         connectopic_map = manifold_tsne.fit_transform(distances)
 
         numpy.save(filename_connectopic_map, connectopic_map)
 
-    print("\rtSNE embedding... Done!",
-          end="", flush=True)
+    print("\rtSNE embedding... Done!", flush=True)
 
     return connectopic_map, roi_mask
 
@@ -322,12 +308,18 @@ if __name__ == "__main__":
                  'Results/rfMRI_REST1_LR/' \
                  'rfMRI_REST1_LR_hp2000_clean.nii.gz'
 
-    print("Loading Nifti image...")
+    print("Loading Nifti image...", end="", flush=True)
 
+    ###
+    #
     # Load Nifti image
+    #
+    ###
     nifti_image = nibabel.load(image_path)
 
-    print("Loading ROI from atlas...")
+    print("Loading Nifti image... Done!", flush=True)
+
+    print("Loading ROI from atlas...", end="", flush=True)
 
     # Load M1 region
     dataset = datasets.fetch_atlas_harvard_oxford('cort-maxprob-thr25-2mm')
@@ -346,11 +338,19 @@ if __name__ == "__main__":
     roi_mask_width = roi_mask.shape[0]
     roi_mask[int(roi_mask_width/2):, :, :] = False
 
-    print("Loading brain mask...")
+    print("Loading ROI from atlas... Done!", flush=True)
 
+    print("Loading brain mask...", end="", flush=True)
+
+    ###
+    #
     # Load brain mask
+    #
+    ###
     brain_mask = numpy.zeros(harvard_oxford_data.shape, dtype=bool)
     brain_mask[numpy.nonzero(harvard_oxford_data)] = True
+
+    print("Loading brain mask... Done!", flush=True)
 
     # Display brain mask and ROI mask
     pyplot.figure(1)
