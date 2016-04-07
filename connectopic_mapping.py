@@ -50,12 +50,16 @@ def compute_similarity_map(fingerprints, idx_chunk=None):
         num_voxels_from_chunk = num_voxels_in_roi - i_chunk
 
         fp_i = fingerprints[i_chunk, :]
-        fp_i_mat = numpy.repeat(fp_i[numpy.newaxis, :], num_voxels_from_chunk, axis=0)
+        fp_i_mat = numpy.repeat(fp_i[numpy.newaxis, :],
+                                num_voxels_from_chunk,
+                                axis=0)
 
         fp_means = (fp_i_mat + fingerprints_chunk) / 2
 
         fp_means_row = numpy.mean(fp_means, axis=1)
-        fp_means_row_mat = numpy.repeat(fp_means_row[:, numpy.newaxis], num_voxels_out_roi, axis=1)
+        fp_means_row_mat = numpy.repeat(fp_means_row[:, numpy.newaxis],
+                                        num_voxels_out_roi,
+                                        axis=1)
 
         eta2_num = sum_coeff(fp_i_mat, fingerprints_chunk, fp_means)
         eta2_den = sum_coeff(fp_i_mat, fingerprints_chunk, fp_means_row_mat)
@@ -236,7 +240,7 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
 
         # Approximation of the optimal fraction of the dataset to
         # allocate to each CPU
-        frac_fingerprint = (numpy.arange(num_cpu+1)) * 2 / (num_cpu * (num_cpu + 1))
+        frac_fingerprint = (numpy.arange(num_cpu+1)) * 2 / (num_cpu * (num_cpu+1))
         idxs_fingerprint = numpy.cumsum(frac_fingerprint) * num_voxels_in_roi
         idxs_pool = [numpy.arange(int(idxs_fingerprint[idx]),
                                   int(idxs_fingerprint[idx+1]))
@@ -371,15 +375,15 @@ if __name__ == "__main__":
 
     # Display connectopy 0 dimension
     pyplot.figure(2)
-    x_index = 13
+    x_index = 21
     z_index = 74
 
-    coords_brain = numpy.where(brain_mask[:, :, z_index])
+    coords_brain = numpy.where(brain_mask[x_index, :, :])
     pyplot.scatter(coords_brain[0], coords_brain[1], c='w')
 
     pyplot.hold(True)
 
-    coords_mask = numpy.where(roi_mask[:, :, z_index])
+    coords_mask = numpy.where(roi_mask[x_index, :, :])
 
     # Get voxels color from embedding
     min_val = numpy.min(embedding, axis=0)
