@@ -1,15 +1,59 @@
-import sys
-import time
 import os
 import nibabel
 import numpy
 import multiprocessing
+import GPy
 from nilearn import datasets
 from sklearn import manifold
 from scipy.sparse import csgraph
 
 from matplotlib import pyplot
-import seaborn
+
+
+def spatial_statistic(x, y, x_predictions):
+    """ Approximate each connectopic map using a spatial model. The
+        input is smoothed by a zero-mean Gaussian process where the
+        kernel is given by a Marten covariance function added to Gaussian
+        noise. This method estimate the parameters and return the values
+        predicted at the locations in x_predictions.
+    
+
+    Parameters
+    ----------
+    x : numpy.ndarray, (n_voxels, 3)
+        3D coordinates of the center of each voxel in the ROI.
+
+    y : numpy.ndarray, (n_voxels, n_dim)
+        Values of the voxels centered in x. Each dimension of y is
+        estimated independently.
+
+    x_predictions : numpy.ndarray, (n_predictions, 3)
+        3D coordinates where to predict the function.
+
+    Returns
+    -------
+    y_means : numpy.ndarray, (n_predictions, n_dim)
+        A posterior mean from the Gaussian process for each dimension
+        given as input.
+
+    y_vars : numpy.ndarray, (n_predictions, )
+        Variance at each x_predictions point.
+
+    """
+
+    # Matern kernel with v=5/2, the GPRegression model includes a
+    # Gaussian noise by default.
+    kernel = GPy.kern.Matern52(input_dim=3, variance=1., lengthscale=1.)
+
+    # Estimate the model
+    model = GPy.models.GPRegression(x, y, kernel)
+    model.optimize(messages=True)
+
+    print(model)
+
+    y_means, y_vars = model.predict(x_predictions)
+
+    return y_means, y_vars
 
 
 def compute_fingerprints(data_in_roi, data, idxs_chunk=None):
@@ -398,10 +442,25 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
 
     # Learn the manifold for this data and reproject the similarity
     # graph on the two most significant connectopies
-    connectopic_map = manifold.spectral_embedding(eta2_coef, n_components=2, norm_laplacian=False)
+    embedding = manifold.spectral_embedding(eta2_coef, n_components=2, norm_laplacian=False)
 
-    print("\rSpectral embedding... Done!",
+    print("\rSpectral embedding... Done!", flush=True)
+
+    print("Spatial statistics...",
           end="", flush=True)
+
+    filename_connectopic_map = 'connectopic_map.npy'
+    if os.path.isfile(filename_connectopic_map):
+        connectopic_map = numpy.load(filename_connectopic_map)
+    else:
+
+        # Run gaussian process on embedding to compute spatial statistics
+        coord_x, coord_y, coord_z = numpy.where(roi_mask)
+        coords = numpy.array([[x, y, z] for x, y, z in zip(coord_x, coord_y, coord_z)])
+        connectopic_map, connectopic_var = spatial_statistic(coords, embedding, coords)
+        numpy.save(filename_connectopic_map, connectopic_map)
+
+    print("Spatial statistics... Done!", flush=True)
 
     return connectopic_map, roi_mask
 
@@ -470,7 +529,7 @@ if __name__ == "__main__":
     pyplot.scatter(coords_brain[0], coords_brain[1], c='w')
     pyplot.hold(True)
     coords_mask = numpy.where(roi_mask[x_index, :, :])
-    cmap = pyplot.get_cmap('inferno')
+    cmap = pyplot.get_cmap('jet')
     min_mask = numpy.min(embedding[:, 0])
     max_mask = numpy.max(embedding[:, 0])
     clrs_mask = cmap((embedding[:, 0] - min_mask) / (max_mask - min_mask))
