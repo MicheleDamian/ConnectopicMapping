@@ -2,10 +2,57 @@ import os
 import nibabel
 import numpy
 import multiprocessing
+import GPy
 from nilearn import datasets
 from sklearn import manifold
 
 from matplotlib import pyplot
+
+
+def spatial_statistic(x, y, x_predictions):
+    """ Approximate each connectopic map using a spatial model. The
+        input is smoothed by a zero-mean Gaussian process where the
+        kernel is given by a Marten covariance function added to Gaussian
+        noise. This method estimate the parameters and return the values
+        predicted at the locations in x_predictions.
+
+
+    Parameters
+    ----------
+    x : numpy.ndarray, (n_voxels, 3)
+        3D coordinates of the center of each voxel in the ROI.
+
+    y : numpy.ndarray, (n_voxels, n_dim)
+        Values of the voxels centered in x. Each dimension of y is
+        estimated independently.
+
+    x_predictions : numpy.ndarray, (n_predictions, 3)
+        3D coordinates where to predict the function.
+
+    Returns
+    -------
+    y_means : numpy.ndarray, (n_predictions, n_dim)
+        A posterior mean from the Gaussian process for each dimension
+        given as input.
+
+    y_vars : numpy.ndarray, (n_predictions, )
+        Variance at each x_predictions point.
+
+    """
+
+    # Matern kernel with v=5/2, the GPRegression model includes a
+    # Gaussian noise by default.
+    kernel = GPy.kern.Matern52(input_dim=3, variance=1., lengthscale=1.)
+
+    # Estimate the model
+    model = GPy.models.GPRegression(x, y, kernel)
+    model.optimize(messages=True)
+
+    print(model)
+
+    y_means, y_vars = model.predict(x_predictions)
+
+    return y_means, y_vars
 
 
 def compute_similarity_map(fingerprints, idx_chunk=None):
@@ -300,7 +347,27 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
 
     print("\rtSNE embedding... Done!", flush=True)
 
-    return embedding, roi_mask
+    ###
+    #
+    # Estimate a smooth function generating the voxels.
+    #
+    ###
+
+    filename_connectopic_map = 'connectopic_map.npy'
+
+    if os.path.isfile(filename_connectopic_map):
+        connectopic_map = numpy.load(filename_connectopic_map)
+    else:
+
+        # Run gaussian process on embedding to compute spatial statistics
+        coord_x, coord_y, coord_z = numpy.where(roi_mask)
+        coords = numpy.array([[x, y, z] for x, y, z in zip(coord_x, coord_y, coord_z)])
+        connectopic_map, connectopic_var = spatial_statistic(coords, embedding, coords)
+        numpy.save(filename_connectopic_map, connectopic_map)
+
+    print("Spatial statistics... Done!", flush=True)
+
+    return connectopic_map, roi_mask
 
 
 """ Run pipeline
@@ -373,8 +440,7 @@ if __name__ == "__main__":
     # Display connectopy 0 dimension
     pyplot.figure(2)
     x_index = 21
-    z_index = 74
-
+    z_index = 60
     coords_brain = numpy.where(brain_mask[x_index, :, :])
     pyplot.scatter(coords_brain[0], coords_brain[1], c='w')
 
@@ -393,4 +459,5 @@ if __name__ == "__main__":
 
     pyplot.title("ROI connectopies")
     pyplot.legend(("Brain mask", "ROI connectopies"))
+
     pyplot.show()
