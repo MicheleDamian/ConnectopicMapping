@@ -273,10 +273,10 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
 
     print("tSNE embedding...", flush=True)
 
-    filename_connectopic_map = 'connectopic_map.npy'
+    filename_embedding = 'embedding.npy'
 
-    if os.path.isfile(filename_connectopic_map):
-        connectopic_map = numpy.load(filename_connectopic_map)
+    if os.path.isfile(filename_embedding):
+        embedding = numpy.load(filename_embedding)
     else:
 
         distances = 2 * (1 - eta2_coef)
@@ -294,13 +294,13 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
                                       random_state=None,
                                       method='exact')
 
-        connectopic_map = manifold_tsne.fit_transform(distances)
+        embedding = manifold_tsne.fit_transform(distances)
 
-        numpy.save(filename_connectopic_map, connectopic_map)
+        numpy.save(filename_embedding, embedding)
 
     print("\rtSNE embedding... Done!", flush=True)
 
-    return connectopic_map, roi_mask
+    return embedding, roi_mask
 
 
 """ Run pipeline
@@ -369,9 +369,6 @@ if __name__ == "__main__":
 
     # Compute Haak mapping
     embedding, roi_mask = haak_mapping(nifti_image, roi_mask, brain_mask)
-
-    numpy.save('embedding.npy', embedding)
-    numpy.save('roi_mask.npy', roi_mask)
 
     # Display connectopy 0 dimension
     pyplot.figure(2)
