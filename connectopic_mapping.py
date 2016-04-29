@@ -46,7 +46,7 @@ def spatial_statistic(x, y, x_predictions):
 
     # Estimate the model
     model = GPy.models.GPRegression(x, y, kernel)
-    model.optimize(messages=True)
+    #model.optimize(messages=True)
 
     print(model)
 
@@ -123,7 +123,7 @@ def compute_similarity_map(fingerprints, idx_chunk=None):
     return eta2_coef
 
 
-def haak_mapping(nifti_image, roi_mask, brain_mask=None):
+def haak_mapping(nifti_image, roi_mask, brain_mask=None, out_path='.'):
     """
     Fully data-driven methods for mapping connectopies using
     functional magnetic resonance imaging (fMRI) data acquired at
@@ -152,7 +152,27 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
         not included in the analysis. If None the entire nifti image
         is considered for the analysis.
 
+    out_path : string, (default: None)
+        folder where to save the intermediate results. If the folder
+        doesn't exist the method tries to create one. By default the
+        results are saved in the same folder from where the script is
+        run. They are not recomputed if they are are already present.
+        If out_path=None no intermediate result is saved and everything
+        is recomputed.
+
     """
+
+    # File names of intermediate results
+    if out_path is not None:
+        # Create folder and subfolders if they don't exist
+        os.makedirs(out_path)
+        # Instantiate filename variables
+        filename_data_s = out_path + os.sep + 'data_s.npy'
+        filename_data_v = out_path + os.sep + 'data_v.npy'
+        filename_fingerprints = out_path + os.sep + 'fingerprints.npy'
+        filename_eta2_coef = out_path + os.sep + 'eta2_coef.npy'
+        filename_embedding = out_path + os.sep + 'embedding.npy'
+        filename_connectopic_map = out_path + os.sep + 'connectopic_map.npy'
 
     num_cpu = multiprocessing.cpu_count()
 
@@ -222,10 +242,7 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
 
     print("Dimensionality reduction...", end="", flush=True)
 
-    filename_data_s = 'data_s.npy'
-    filename_data_v = 'data_v.npy'
-
-    if os.path.isfile(filename_data_v):
+    if out_path is not None and os.path.isfile(filename_data_v):
         data_v = numpy.load(filename_data_v)
         data_s = numpy.load(filename_data_s)
     else:
@@ -242,14 +259,11 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
         data_u, data_s, data_v = numpy.linalg.svd(data, full_matrices=False)
 
         # Store data
-        numpy.save(filename_data_s, data_s)
-        numpy.save(filename_data_v, data_v)
+        if out_path is not None:
+            numpy.save(filename_data_s, data_s)
+            numpy.save(filename_data_v, data_v)
 
     print("\rDimensionality reduction... Done!", flush=True)
-
-    # TEST
-    numpy.save('data_in_roi.npy', data_in_roi)
-    numpy.save('data_out_roi.npy', data_out_roi)
 
     ###
     #
@@ -260,9 +274,7 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
 
     print("Computing fingerprints...", end="", flush=True)
 
-    filename_fingerprints = 'fingerprints.npy'
-
-    if os.path.isfile(filename_fingerprints):
+    if out_path is not None and os.path.isfile(filename_fingerprints):
         fingerprints = numpy.load(filename_fingerprints)
     else:
 
@@ -271,15 +283,14 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
                                      data_v[:num_voxels_svd, :num_voxels_in_roi])
         fingerprints = data_reprojected.T
 
-        numpy.save(filename_fingerprints, fingerprints)
+        if out_path is not None:
+            numpy.save(filename_fingerprints, fingerprints)
 
     print("\rComputing fingerprints... Done!", flush=True)
 
     print("Computing similarity maps...", end="", flush=True)
 
-    filename_eta2_coef = 'eta2_coef.npy'
-
-    if os.path.isfile(filename_eta2_coef):
+    if out_path is not None and os.path.isfile(filename_eta2_coef):
         eta2_coef = numpy.load(filename_eta2_coef)
     else:
         # Distribute load equally among all CPUs
@@ -307,7 +318,8 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
                 eta2_coef[i_eta, i_eta:] = eta2_row
                 eta2_coef[i_eta:, i_eta] = eta2_row
 
-        numpy.save(filename_eta2_coef, eta2_coef)
+        if out_path is not None:
+            numpy.save(filename_eta2_coef, eta2_coef)
 
     print("\rComputing similarity maps... Done!", flush=True)
 
@@ -320,15 +332,13 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
 
     print("tSNE embedding...", flush=True)
 
-    filename_embedding = 'embedding.npy'
-
-    if os.path.isfile(filename_embedding):
+    if out_path is not None and os.path.isfile(filename_embedding):
         embedding = numpy.load(filename_embedding)
     else:
 
         distances = 2 * (1 - eta2_coef)
 
-        manifold_tsne = manifold.TSNE(n_components=3,
+        manifold_tsne = manifold.TSNE(n_components=1,
                                       perplexity=30.0,
                                       early_exaggeration=4.0,
                                       learning_rate=1000.0,
@@ -343,7 +353,8 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
 
         embedding = manifold_tsne.fit_transform(distances)
 
-        numpy.save(filename_embedding, embedding)
+        if out_path is not None:
+            numpy.save(filename_embedding, embedding)
 
     print("\rtSNE embedding... Done!", flush=True)
 
@@ -353,9 +364,7 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
     #
     ###
 
-    filename_connectopic_map = 'connectopic_map.npy'
-
-    if os.path.isfile(filename_connectopic_map):
+    if out_path is not None and os.path.isfile(filename_connectopic_map):
         connectopic_map = numpy.load(filename_connectopic_map)
     else:
 
@@ -363,11 +372,13 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None):
         coord_x, coord_y, coord_z = numpy.where(roi_mask)
         coords = numpy.array([[x, y, z] for x, y, z in zip(coord_x, coord_y, coord_z)])
         connectopic_map, connectopic_var = spatial_statistic(coords, embedding, coords)
-        numpy.save(filename_connectopic_map, connectopic_map)
+
+        if out_path is not None:
+            numpy.save(filename_connectopic_map, connectopic_map)
 
     print("Spatial statistics... Done!", flush=True)
 
-    return connectopic_map, roi_mask
+    return embedding, connectopic_map, roi_mask
 
 
 """ Run pipeline
@@ -379,6 +390,9 @@ if __name__ == "__main__":
                  'Results/rfMRI_REST1_LR/' \
                  'rfMRI_REST1_LR_hp2000_clean.nii.gz'
 
+    out_path = '/Users/michele/Development/Workspaces/UpWork/' \
+               'Morgan_Hough/Results/rfMRI/100307_REST1_LR'
+
     print("Loading Nifti image...", end="", flush=True)
 
     ###
@@ -388,17 +402,17 @@ if __name__ == "__main__":
     ###
     nifti_image = nibabel.load(image_path)
 
-    print("Loading Nifti image... Done!", flush=True)
+    print("\rLoading Nifti image... Done!", flush=True)
 
     print("Loading ROI from atlas...", end="", flush=True)
 
     # Load M1 region
     dataset = datasets.fetch_atlas_harvard_oxford('cort-maxprob-thr25-2mm')
-    harvard_oxford_labels = dataset.labels
+    harvard_oxford_labels = numpy.array(dataset.labels)
     harvard_oxford_maps = nibabel.load(dataset.maps)
     harvard_oxford_data = harvard_oxford_maps.get_data()
 
-    m1_indexes = numpy.where((dataset.labels == "Precentral Gyrus"))[0]
+    m1_indexes = numpy.where((harvard_oxford_labels == "Precentral Gyrus"))
 
     # Build mask from ROI
     roi_mask = numpy.zeros(harvard_oxford_data.shape, dtype=bool)
@@ -409,7 +423,7 @@ if __name__ == "__main__":
     roi_mask_width = roi_mask.shape[0]
     roi_mask[int(roi_mask_width/2):, :, :] = False
 
-    print("Loading ROI from atlas... Done!", flush=True)
+    print("\rLoading ROI from atlas... Done!", flush=True)
 
     print("Loading brain mask...", end="", flush=True)
 
@@ -421,23 +435,25 @@ if __name__ == "__main__":
     brain_mask = numpy.zeros(harvard_oxford_data.shape, dtype=bool)
     brain_mask[numpy.nonzero(harvard_oxford_data)] = True
 
-    print("Loading brain mask... Done!", flush=True)
+    print("\rLoading brain mask... Done!", flush=True)
 
     # Display brain mask and ROI mask
     pyplot.figure(1)
     x_index = 21
     coords_brain = numpy.where(brain_mask[x_index, :, :])
     pyplot.scatter(coords_brain[0], coords_brain[1], c='b')
+
     pyplot.hold(True)
+
     coords_mask = numpy.where(roi_mask[x_index, :, :])
     pyplot.scatter(coords_mask[0], coords_mask[1], c='r')
     pyplot.title("Brain and ROI masks")
     pyplot.legend(("Brain mask", "ROI mask"))
 
     # Compute Haak mapping
-    embedding, roi_mask = haak_mapping(nifti_image, roi_mask, brain_mask)
+    embedding, connectopy, roi_mask = haak_mapping(nifti_image, roi_mask, brain_mask)
 
-    # Display connectopy 0 dimension
+    # Display embedding
     pyplot.figure(2)
     x_index = 21
     z_index = 60
@@ -452,6 +468,33 @@ if __name__ == "__main__":
     min_val = numpy.min(embedding, axis=0)
     max_val = numpy.max(embedding, axis=0)
     clr_rgb = (embedding - min_val) / (max_val - min_val)
+    jet = pyplot.get_cmap('jet')
+    clr_rgb = jet(clr_rgb.flatten())
+    pyplot.scatter(coords_mask[0], coords_mask[1],
+                   s=50,
+                   c=clr_rgb,
+                   edgecolors='none')
+
+    pyplot.title("ROI embedding")
+    pyplot.legend(("Brain mask", "ROI embedding"))
+
+    # Display connectopy
+    pyplot.figure(3)
+    x_index = 21
+    z_index = 60
+    coords_brain = numpy.where(brain_mask[x_index, :, :])
+    pyplot.scatter(coords_brain[0], coords_brain[1], c='w')
+
+    pyplot.hold(True)
+
+    coords_mask = numpy.where(roi_mask[x_index, :, :])
+
+    # Get voxels color from embedding
+    min_val = numpy.min(connectopy, axis=0)
+    max_val = numpy.max(connectopy, axis=0)
+    clr_rgb = (connectopy - min_val) / (max_val - min_val)
+    jet = pyplot.get_cmap('jet')
+    clr_rgb = jet(clr_rgb.flatten())
     pyplot.scatter(coords_mask[0], coords_mask[1],
                    s=50,
                    c=clr_rgb,
