@@ -380,6 +380,83 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None, out_path='.'):
 
     return embedding, connectopic_map, roi_mask
 
+def visualize_volume(data, fig, title, cmap, slice_indexes, brain_mask, roi_mask):
+
+    # Get voxels color from embedding
+    min_val = numpy.min(data, axis=0)
+    max_val = numpy.max(data, axis=0)
+    data_norm = (data - min_val) / (max_val - min_val)
+    fun_cmap = pyplot.get_cmap(cmap)
+    clr_rgb = fun_cmap(data_norm.flatten())
+
+    def get_slice_coords(mask, plane, dims):
+        coords_mask = numpy.where(mask)
+        coords_idx = numpy.where(coords_mask[plane[3]] == plane[2])
+        return coords_mask[dims[0]][coords_idx], coords_mask[dims[1]][coords_idx]
+
+    #
+    # Display embedding
+    #
+    axes = Grid(fig, rect=111, nrows_ncols=(2,2), label_mode='L')
+
+    # Display in X, Y and Z subplot
+    for i in range(3):
+
+        dims = numpy.delete(numpy.arange(3), slice_indexes[i][3])
+
+        # Plot brain
+        coords_brain = get_slice_coords(brain_mask, slice_indexes[i], dims)
+        axes[i].scatter(coords_brain[0], coords_brain[1], c='k', s=15, edgecolors='face')
+
+        axes[i].hold(True)
+
+        # Plot ROI
+        coords_roi = get_slice_coords(roi_mask, slice_indexes[i], dims)
+        axes[i].scatter(coords_roi[0], coords_roi[1], c=clr_rgb, s=15, edgecolors='face')
+
+        axes[i].set_title("{0} at slice {2}={3}".format(title, *slice_indexes[i]))
+        axes[i].legend(("Cortex", "ROI"), loc=2)
+        axes[i].grid(True)
+
+
+    # Set axis limits
+    coords_3d = numpy.where(roi_mask)
+    coords_x = numpy.sort(coords_3d[0])
+    coords_y = numpy.sort(coords_3d[1])
+    coords_z = numpy.sort(coords_3d[2])
+    axes[0].set_xlim([coords_x[0] - 5, coords_x[-1] + 5])
+    axes[0].set_ylim([coords_z[0] - 5, coords_z[-1] + 5])
+    axes[1].set_xlim([coords_y[0] - 5, coords_y[-1] + 5])
+    axes[2].set_ylim([coords_y[0] - 5, coords_y[-1] + 5])
+
+    # Remove shared borders
+    axes[0].spines['bottom'].set_visible(False)
+    axes[0].spines['right'].set_visible(False)
+    axes[1].spines['left'].set_visible(False)
+    axes[1].spines['bottom'].set_visible(False)
+    axes[2].spines['top'].set_visible(False)
+    axes[2].spines['right'].set_visible(False)
+    axes[3].spines['top'].set_visible(False)
+    axes[3].spines['left'].set_visible(False)
+
+    # Name axes
+    axes[0].set_ylabel("Z axis")
+    axes[2].set_xlabel("X axis")
+    axes[2].set_ylabel("Y axis")
+    axes[3].set_xlabel("Y axis")
+
+    # Backgroud color
+    bg_color = [0.9, 0.9, 0.9]
+    for i in range(4):
+        axes[i].patch.set_facecolor(bg_color)
+
+    # Add colorbar
+    sm = pyplot.cm.ScalarMappable(cmap=cmap, norm=pyplot.Normalize(vmin=0, vmax=1))
+    sm._A = []
+    cbaxes = fig.add_axes([0.95, 0.1, 0.01, 0.4])
+    cbar = pyplot.colorbar(sm, cax=cbaxes)
+    cbar.set_ticklabels([])
+
 
 """ Run pipeline
 """
@@ -391,7 +468,8 @@ if __name__ == "__main__":
                  'rfMRI_REST1_LR_hp2000_clean.nii.gz'
 
     out_path = '/Users/michele/Development/Workspaces/UpWork/' \
-               'Morgan_Hough/Results/rfMRI/100307_REST1_LR'
+               'Morgan_Hough/Results/connectopic_mapping/manifold_v2/' \
+               'rfMRI_100307_REST1_LR'
 
     print("Loading Nifti image...", end="", flush=True)
 
@@ -438,104 +516,19 @@ if __name__ == "__main__":
     #
     embedding, connectopy, roi_mask = haak_mapping(nifti_image, roi_mask, brain_mask, out_path)
 
-    def get_slice_coords(mask, plane, dims):
-        coords_mask = numpy.where(mask)
-        coords_idx = numpy.where(coords_mask[plane[3]] == plane[2])
-        return coords_mask[dims[0]][coords_idx], coords_mask[dims[1]][coords_idx]
-
     # Slice coordinates (plane, axis, value, axis_index)
-    slice_indexes = [('X-Z', 'Y', 55, 1), ('Y-Z', 'X', 25, 0), ('X-Y', 'Z', 69, 2)]
-
-    # Get voxels color from embedding
-    min_val = numpy.min(embedding, axis=0)
-    max_val = numpy.max(embedding, axis=0)
-    embed_norm = (embedding - min_val) / (max_val - min_val)
-    jet = pyplot.get_cmap('jet')
-    clr_rgb = jet(embed_norm.flatten())
+    slice_indexes = [('X-Z', 'Y', 65, 1), ('Y-Z', 'X', 18, 0), ('X-Y', 'Z', 61, 2)]
 
     #
     # Display embedding
     #
-    fig = pyplot.figure(2, tight_layout=True)
-    axes = Grid(fig, rect=111, nrows_ncols=(2,2), label_mode='L')
-
-    # Display in X, Y and Z subplot
-    for i in range(3):
-
-        dims = numpy.delete(numpy.arange(3), slice_indexes[i][3])
-
-        # Plot brain
-        coords_brain = get_slice_coords(brain_mask, slice_indexes[i], dims)
-        axes[i].scatter(coords_brain[0], coords_brain[1], c='k', s=10, edgecolors='face')
-
-        axes[i].hold(True)
-
-        # Plot ROI
-        coords_roi = get_slice_coords(roi_mask, slice_indexes[i], dims)
-        axes[i].scatter(coords_roi[0], coords_roi[1], c=clr_rgb, s=10, edgecolors='face')
-
-        axes[i].set_title("Voxels after Embedding at {1}={2}".format(*slice_indexes[i]))
-        axes[i].legend(("Cortex", "ROI"))
-        axes[i].grid(True)
-
-    # Set axis limits
-    coords_brain_3d = numpy.where(brain_mask)
-    coords_brain_x = numpy.sort(coords_brain_3d[0])
-    coords_brain_y = numpy.sort(coords_brain_3d[1])
-    coords_brain_z = numpy.sort(coords_brain_3d[2])
-    axes[0].set_xlim([coords_brain_x[0] - 1, coords_brain_x[-1] + 1])
-    axes[0].set_ylim([coords_brain_z[0] - 1, coords_brain_z[-1] + 1])
-    axes[1].set_xlim([coords_brain_y[0] - 1, coords_brain_y[-1] + 1])
-    axes[2].set_ylim([coords_brain_y[0] - 1, coords_brain_y[-1] + 1])
-
-    # Remove shared borders
-    axes[0].spines['bottom'].set_visible(False)
-    axes[0].spines['right'].set_visible(False)
-    axes[1].spines['left'].set_visible(False)
-    axes[1].spines['bottom'].set_visible(False)
-    axes[2].spines['top'].set_visible(False)
-    axes[2].spines['right'].set_visible(False)
-    axes[3].spines['top'].set_visible(False)
-    axes[3].spines['left'].set_visible(False)
-
-    # Name axes
-    axes[0].set_ylabel("Z axis")
-    axes[2].set_xlabel("X axis")
-    axes[2].set_ylabel("Y axis")
-    axes[3].set_xlabel("Y axis")
-
-    # Add colorbar
-    sm = pyplot.cm.ScalarMappable(cmap='jet', norm=pyplot.Normalize(vmin=0, vmax=1))
-    sm._A = []
-    cbaxes = fig.add_axes([0.95, 0.1, 0.01, 0.4])
-    cbar = pyplot.colorbar(sm, cax=cbaxes)
-    cbar.set_ticklabels([])
+    fig = pyplot.figure(1, tight_layout=True)
+    visualize_volume(embedding, fig, "Voxels after Manifold Learning", 'terrain', slice_indexes, brain_mask, roi_mask)
 
     #
     # Display connectopy
     #
-    pyplot.figure(3)
-    x_index = 21
-    z_index = 60
-    coords_brain = numpy.where(brain_mask[x_index, :, :])
-    pyplot.scatter(coords_brain[0], coords_brain[1], c='w')
-
-    pyplot.hold(True)
-
-    coords_mask = numpy.where(roi_mask[x_index, :, :])
-
-    # Get voxels color from embedding
-    min_val = numpy.min(connectopy, axis=0)
-    max_val = numpy.max(connectopy, axis=0)
-    clr_rgb = (connectopy - min_val) / (max_val - min_val)
-    jet = pyplot.get_cmap('jet')
-    clr_rgb = jet(clr_rgb.flatten())
-    pyplot.scatter(coords_mask[0], coords_mask[1],
-                   s=50,
-                   c=clr_rgb,
-                   edgecolors='none')
-
-    pyplot.title("Connectopies at x={0}".format(x_index))
-    pyplot.legend(("Brain mask", "Connectopies"))
+    fig = pyplot.figure(2, tight_layout=True)
+    visualize_volume(connectopy, fig, "Voxels after Gaussian Processes", 'terrain', slice_indexes, brain_mask, roi_mask)
 
     pyplot.show()
