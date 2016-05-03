@@ -1,13 +1,13 @@
 import os
 import nibabel
 import numpy
+import matplotlib
 import multiprocessing
 import GPy
 from nilearn import datasets
 from sklearn import manifold
-
 from matplotlib import pyplot
-
+from mpl_toolkits.axes_grid1 import Grid
 
 def spatial_statistic(x, y, x_predictions):
     """ Approximate each connectopic map using a spatial model. The
@@ -165,7 +165,7 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None, out_path='.'):
     # File names of intermediate results
     if out_path is not None:
         # Create folder and subfolders if they don't exist
-        os.makedirs(out_path)
+        os.makedirs(out_path, exist_ok=True)
         # Instantiate filename variables
         filename_data_s = out_path + os.sep + 'data_s.npy'
         filename_data_v = out_path + os.sep + 'data_v.npy'
@@ -395,11 +395,9 @@ if __name__ == "__main__":
 
     print("Loading Nifti image...", end="", flush=True)
 
-    ###
     #
     # Load Nifti image
     #
-    ###
     nifti_image = nibabel.load(image_path)
 
     print("\rLoading Nifti image... Done!", flush=True)
@@ -427,58 +425,95 @@ if __name__ == "__main__":
 
     print("Loading brain mask...", end="", flush=True)
 
-    ###
     #
     # Load brain mask
     #
-    ###
     brain_mask = numpy.zeros(harvard_oxford_data.shape, dtype=bool)
     brain_mask[numpy.nonzero(harvard_oxford_data)] = True
 
     print("\rLoading brain mask... Done!", flush=True)
 
-    # Display brain mask and ROI mask
-    pyplot.figure(1)
-    x_index = 21
-    coords_brain = numpy.where(brain_mask[x_index, :, :])
-    pyplot.scatter(coords_brain[0], coords_brain[1], c='b')
-
-    pyplot.hold(True)
-
-    coords_mask = numpy.where(roi_mask[x_index, :, :])
-    pyplot.scatter(coords_mask[0], coords_mask[1], c='r')
-    pyplot.title("Brain and ROI masks")
-    pyplot.legend(("Brain mask", "ROI mask"))
-
+    #
     # Compute Haak mapping
-    embedding, connectopy, roi_mask = haak_mapping(nifti_image, roi_mask, brain_mask)
+    #
+    embedding, connectopy, roi_mask = haak_mapping(nifti_image, roi_mask, brain_mask, out_path)
 
-    # Display embedding
-    pyplot.figure(2)
-    x_index = 21
-    z_index = 60
-    coords_brain = numpy.where(brain_mask[x_index, :, :])
-    pyplot.scatter(coords_brain[0], coords_brain[1], c='w')
+    def get_slice_coords(mask, plane, dims):
+        coords_mask = numpy.where(mask)
+        coords_idx = numpy.where(coords_mask[plane[3]] == plane[2])
+        return coords_mask[dims[0]][coords_idx], coords_mask[dims[1]][coords_idx]
 
-    pyplot.hold(True)
-
-    coords_mask = numpy.where(roi_mask[x_index, :, :])
+    # Slice coordinates (plane, axis, value, axis_index)
+    slice_indexes = [('X-Z', 'Y', 55, 1), ('Y-Z', 'X', 25, 0), ('X-Y', 'Z', 69, 2)]
 
     # Get voxels color from embedding
     min_val = numpy.min(embedding, axis=0)
     max_val = numpy.max(embedding, axis=0)
-    clr_rgb = (embedding - min_val) / (max_val - min_val)
+    embed_norm = (embedding - min_val) / (max_val - min_val)
     jet = pyplot.get_cmap('jet')
-    clr_rgb = jet(clr_rgb.flatten())
-    pyplot.scatter(coords_mask[0], coords_mask[1],
-                   s=50,
-                   c=clr_rgb,
-                   edgecolors='none')
+    clr_rgb = jet(embed_norm.flatten())
 
-    pyplot.title("ROI embedding")
-    pyplot.legend(("Brain mask", "ROI embedding"))
+    #
+    # Display embedding
+    #
+    fig = pyplot.figure(2, tight_layout=True)
+    axes = Grid(fig, rect=111, nrows_ncols=(2,2), label_mode='L')
 
+    # Display in X, Y and Z subplot
+    for i in range(3):
+
+        dims = numpy.delete(numpy.arange(3), slice_indexes[i][3])
+
+        # Plot brain
+        coords_brain = get_slice_coords(brain_mask, slice_indexes[i], dims)
+        axes[i].scatter(coords_brain[0], coords_brain[1], c='k', s=10, edgecolors='face')
+
+        axes[i].hold(True)
+
+        # Plot ROI
+        coords_roi = get_slice_coords(roi_mask, slice_indexes[i], dims)
+        axes[i].scatter(coords_roi[0], coords_roi[1], c=clr_rgb, s=10, edgecolors='face')
+
+        axes[i].set_title("Voxels after Embedding at {1}={2}".format(*slice_indexes[i]))
+        axes[i].legend(("Cortex", "ROI"))
+        axes[i].grid(True)
+
+    # Set axis limits
+    coords_brain_3d = numpy.where(brain_mask)
+    coords_brain_x = numpy.sort(coords_brain_3d[0])
+    coords_brain_y = numpy.sort(coords_brain_3d[1])
+    coords_brain_z = numpy.sort(coords_brain_3d[2])
+    axes[0].set_xlim([coords_brain_x[0] - 1, coords_brain_x[-1] + 1])
+    axes[0].set_ylim([coords_brain_z[0] - 1, coords_brain_z[-1] + 1])
+    axes[1].set_xlim([coords_brain_y[0] - 1, coords_brain_y[-1] + 1])
+    axes[2].set_ylim([coords_brain_y[0] - 1, coords_brain_y[-1] + 1])
+
+    # Remove shared borders
+    axes[0].spines['bottom'].set_visible(False)
+    axes[0].spines['right'].set_visible(False)
+    axes[1].spines['left'].set_visible(False)
+    axes[1].spines['bottom'].set_visible(False)
+    axes[2].spines['top'].set_visible(False)
+    axes[2].spines['right'].set_visible(False)
+    axes[3].spines['top'].set_visible(False)
+    axes[3].spines['left'].set_visible(False)
+
+    # Name axes
+    axes[0].set_ylabel("Z axis")
+    axes[2].set_xlabel("X axis")
+    axes[2].set_ylabel("Y axis")
+    axes[3].set_xlabel("Y axis")
+
+    # Add colorbar
+    sm = pyplot.cm.ScalarMappable(cmap='jet', norm=pyplot.Normalize(vmin=0, vmax=1))
+    sm._A = []
+    cbaxes = fig.add_axes([0.95, 0.1, 0.01, 0.4])
+    cbar = pyplot.colorbar(sm, cax=cbaxes)
+    cbar.set_ticklabels([])
+
+    #
     # Display connectopy
+    #
     pyplot.figure(3)
     x_index = 21
     z_index = 60
@@ -500,7 +535,7 @@ if __name__ == "__main__":
                    c=clr_rgb,
                    edgecolors='none')
 
-    pyplot.title("ROI connectopies")
-    pyplot.legend(("Brain mask", "ROI connectopies"))
+    pyplot.title("Connectopies at x={0}".format(x_index))
+    pyplot.legend(("Brain mask", "Connectopies"))
 
     pyplot.show()
