@@ -517,7 +517,7 @@ if __name__ == "__main__":
     embedding, connectopy, roi_mask = haak_mapping(nifti_image, roi_mask, brain_mask, out_path)
 
     # Slice coordinates (plane, axis, value, axis_index)
-    slice_indexes = [('X-Z', 'Y', 65, 1), ('Y-Z', 'X', 18, 0), ('X-Y', 'Z', 61, 2)]
+    slice_indexes = [('X-Z', 'Y', 65, 1), ('Y-Z', 'X', 18, 0), ('X-Y', 'Z', 50, 2)]
 
     #
     # Display embedding
