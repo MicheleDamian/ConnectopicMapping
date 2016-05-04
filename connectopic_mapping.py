@@ -548,12 +548,12 @@ if __name__ == "__main__":
 
     image_path = '/Users/michele/Development/Workspaces/UpWork/' \
                  'Morgan_Hough/Resources/rfMRI/103414_REST2/MNINonLinear/' \
-                 'Results/rfMRI_REST2_LR/' \
-                 'rfMRI_REST2_LR_hp2000_clean.nii.gz'
+                 'Results/rfMRI_REST2_RL/' \
+                 'rfMRI_REST2_RL_hp2000_clean.nii.gz'
 
     out_path = '/Users/michele/Development/Workspaces/UpWork/' \
                'Morgan_Hough/Results/connectopic_mapping/master/' \
-               'rfMRI_103414_REST2_LR'
+               'rfMRI_103414_REST2_RL'
 
     print("Loading Nifti image...")
 
@@ -589,8 +589,8 @@ if __name__ == "__main__":
     embedding, connectopy, roi_mask = haak_mapping(nifti_image, roi_mask, brain_mask, out_path)
 
     # Slice coordinates (plane, axis, value, axis_index)
-    slice_indexes = [('X-Z', 'Y', 65, 1), ('Y-Z', 'X', 18, 0), ('X-Y', 'Z', 50, 2)]
-    #slice_indexes = [('X-Z', 'Y', 55, 1), ('Y-Z', 'X', 25, 0), ('X-Y', 'Z', 69, 2)]
+    #slice_indexes = [('X-Z', 'Y', 65, 1), ('Y-Z', 'X', 18, 0), ('X-Y', 'Z', 50, 2)]
+    slice_indexes = [('X-Z', 'Y', 55, 1), ('Y-Z', 'X', 25, 0), ('X-Y', 'Z', 69, 2)]
 
     #
     # Display embedding
