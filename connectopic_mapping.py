@@ -4,10 +4,11 @@ import numpy
 import matplotlib
 import multiprocessing
 import GPy
-from nilearn import datasets
+from nilearn import datasets, image
 from sklearn import manifold
 from matplotlib import pyplot
 from mpl_toolkits.axes_grid1 import Grid
+
 
 def spatial_statistic(x, y, x_predictions):
     """ Approximate each connectopic map using a spatial model. The
@@ -123,7 +124,7 @@ def compute_similarity_map(fingerprints, idx_chunk=None):
     return eta2_coef
 
 
-def haak_mapping(nifti_image, roi_mask, brain_mask=None, out_path='.'):
+def haak_mapping(data, num_voxels_in_roi, roi_mask, out_path='.'):
     """
     Fully data-driven methods for mapping connectopies using
     functional magnetic resonance imaging (fMRI) data acquired at
@@ -176,64 +177,6 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None, out_path='.'):
 
     num_cpu = multiprocessing.cpu_count()
 
-    nifti_data = nifti_image.get_data()
-
-    assert(nifti_data.shape[:-1] == roi_mask.shape)
-    assert(roi_mask.shape == brain_mask.shape)
-
-    # Build a all-ones mask if brain_mask is None
-    if brain_mask is None:
-        brain_mask = numpy.ones(nifti_data.shape[:-1], dtype=bool)
-
-    # Get (time, num_voxels)-shaped array and voxels' indexes in
-    # the original Nifti image from the image and a mask
-    def extract_data(nifti_image, mask):
-        assert(len(nifti_image.shape) == 4)
-        assert(len(mask.shape) == 3)
-        idx = numpy.asarray(numpy.where(mask))
-        data_roi = nifti_image[mask, :].T
-        return data_roi, idx
-
-    print("Extracting time-series from Nifti image...", end="", flush=True)
-
-    # Voxels/Features in column order
-    data_in_roi, idx_in_roi = extract_data(nifti_data, roi_mask * brain_mask)
-
-    data_out_roi, idx_out_roi = extract_data(nifti_data, ~roi_mask * brain_mask)
-
-    print("\rExtracting time-series from Nifti image... Done!", flush=True)
-
-    zeros_in_roi = numpy.where(numpy.all(data_in_roi == 0, axis=0))[0]
-    zeros_out_roi = numpy.where(numpy.all(data_out_roi == 0, axis=0))[0]
-
-    print('Found {0} null time-series in ROI mask'.format(len(zeros_in_roi)),
-          flush=True)
-    print('Found {0} null time-series in brain mask'.format(len(zeros_out_roi)),
-          flush=True)
-
-    print("Removing null time-series from data...", end="", flush=True)
-
-    idx_zeros_in_roi = idx_in_roi[:, zeros_in_roi]
-    roi_mask[tuple(idx_zeros_in_roi)] = False
-    idx_zeros_out_roi = idx_out_roi[:, zeros_out_roi]
-    brain_mask[tuple(idx_zeros_out_roi)] = False
-
-    data_in_roi = numpy.delete(data_in_roi, zeros_in_roi, axis=1)
-    idx_in_roi = numpy.delete(idx_in_roi, zeros_in_roi, axis=1)
-
-    data_out_roi = numpy.delete(data_out_roi, zeros_out_roi, axis=1)
-    idx_out_roi = numpy.delete(idx_out_roi, zeros_out_roi, axis=1)
-
-    print("\rRemoving null time-series from data... Done!", flush=True)
-
-    print('Number brain voxels = {0}'.format(numpy.sum(brain_mask)),
-          flush=True)
-    print('Number ROI voxels = {0}'.format(numpy.sum(roi_mask)),
-          flush=True)
-
-    num_voxels_svd = data_out_roi.shape[0] - 1
-    num_voxels_in_roi = data_in_roi.shape[1]
-
     ###
     #
     # Get first t-1 components (where t is the number of time frames)
@@ -247,16 +190,8 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None, out_path='.'):
         data_s = numpy.load(filename_data_s)
     else:
 
-        # Demean data
-        data_out_roi_mean = numpy.mean(data_out_roi, axis=0)
-        data_out_roi_demean = data_out_roi - data_out_roi_mean
-
-        data_in_roi_mean = numpy.mean(data_in_roi, axis=0)
-        data_in_roi_demean = data_in_roi - data_in_roi_mean
-
-        data = numpy.hstack((data_in_roi_demean, data_out_roi_demean))
-
         data_u, data_s, data_v = numpy.linalg.svd(data, full_matrices=False)
+        del data_u
 
         # Store data
         if out_path is not None:
@@ -278,6 +213,7 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None, out_path='.'):
         fingerprints = numpy.load(filename_fingerprints)
     else:
 
+        num_voxels_svd = data.shape[0] - 1
         data_s_diag = numpy.diag(data_s[:num_voxels_svd])
         data_reprojected = numpy.dot(data_s_diag,
                                      data_v[:num_voxels_svd, :num_voxels_in_roi])
@@ -378,7 +314,7 @@ def haak_mapping(nifti_image, roi_mask, brain_mask=None, out_path='.'):
 
     print("Spatial statistics... Done!", flush=True)
 
-    return embedding, connectopic_map, roi_mask
+    return embedding, connectopic_map
 
 def visualize_volume(data, fig, title, cmap, slice_indexes, brain_mask, roi_mask):
 
@@ -462,23 +398,22 @@ def visualize_volume(data, fig, title, cmap, slice_indexes, brain_mask, roi_mask
 """
 if __name__ == "__main__":
 
-    image_path = '/Users/michele/Development/Workspaces/UpWork/' \
-                 'Morgan_Hough/Resources/rfMRI/100307/MNINonLinear/' \
-                 'Results/rfMRI_REST1_LR/' \
-                 'rfMRI_REST1_LR_hp2000_clean.nii.gz'
+    subject = '103414'
+    session = 'REST1'
+    scans = ['LR', 'RL']
+
+    image_path = '/Users/michele/Development/Workspaces/' \
+                 'UpWork/Morgan_Hough/Resources'
+    image_path_0 = image_path + \
+                   '/rfMRI/{0}_{1}/rfMRI_{1}_{2}_hp2000_clean.nii.gz' \
+                   .format(subject, session, scans[0])
+    image_path_1 = image_path + \
+                   '/rfMRI/{0}_{1}/rfMRI_{1}_{2}_hp2000_clean.nii.gz' \
+                   .format(subject, session, scans[1])
 
     out_path = '/Users/michele/Development/Workspaces/UpWork/' \
                'Morgan_Hough/Results/connectopic_mapping/manifold_v2/' \
-               'rfMRI_100307_REST1_LR'
-
-    print("Loading Nifti image...", end="", flush=True)
-
-    #
-    # Load Nifti image
-    #
-    nifti_image = nibabel.load(image_path)
-
-    print("\rLoading Nifti image... Done!", flush=True)
+               'rfMRI_{0}_{1}'.format(subject, session)
 
     print("Loading ROI from atlas...", end="", flush=True)
 
@@ -511,13 +446,100 @@ if __name__ == "__main__":
 
     print("\rLoading brain mask... Done!", flush=True)
 
+    print("Loading Nifti image...", end="", flush=True)
+
+    #
+    # Load Nifti images, smooth with FWHM=6, calc per voxel % change
+    #
+    def norm_nifti(image_path):
+        # Smooth
+        nifti_image = image.smooth_img(image_path, 6)
+        nifti_data = nifti_image.get_data()
+        nifti_data_shape = nifti_data.shape
+        # Keep just non-zero voxels
+        is_zero = numpy.abs(nifti_data) < numpy.finfo(nifti_data.dtype).eps
+        idx_brain = numpy.where(~numpy.all(is_zero, axis=-1))
+        # Calc mean
+        nifti_data = nifti_data[idx_brain]
+        nifti_data_mean = numpy.mean(nifti_data, axis=-1)[..., numpy.newaxis]
+        # Demean and normalize
+        nifti_data = nifti_data - nifti_data_mean
+        nifti_data = nifti_data / nifti_data_mean
+        data = numpy.zeros(nifti_data_shape, dtype=numpy.float32)
+        data[idx_brain] = nifti_data
+        return data
+
+    nifti_data_0 = norm_nifti(image_path_0)
+    nifti_data_1 = norm_nifti(image_path_1)
+
+    nifti_data = numpy.concatenate((nifti_data_0, nifti_data_1), axis=-1)
+
+    # Delete references to memory (this objects are ~4GB)
+    # Note: this doesn't dealocate memory; the garbage collector will
+    # when it doesn't find the references
+    del nifti_data_0, nifti_data_1
+
+    print("\rLoading Nifti image... Done!", flush=True)
+
+    assert(nifti_data.shape[:-1] == roi_mask.shape)
+    assert(roi_mask.shape == brain_mask.shape)
+
+    # Get (time, num_voxels)-shaped array and voxels' indexes in
+    # the original Nifti image from the image and a mask
+    def extract_data(nifti_image, mask):
+        assert(len(nifti_image.shape) == 4)
+        assert(len(mask.shape) == 3)
+        idx = numpy.asarray(numpy.where(mask))
+        data_roi = nifti_image[mask, :].T
+        return data_roi, idx
+
+    print("Extracting time-series from Nifti image...", end="", flush=True)
+
+    # Voxels/Features in column order
+    data_in_roi, idx_in_roi = extract_data(nifti_data, roi_mask * brain_mask)
+    data_out_roi, idx_out_roi = extract_data(nifti_data, ~roi_mask * brain_mask)
+
+    print("\rExtracting time-series from Nifti image... Done!", flush=True)
+
+    zeros_in_roi = numpy.where(numpy.all(data_in_roi == 0, axis=0))[0]
+    zeros_out_roi = numpy.where(numpy.all(data_out_roi == 0, axis=0))[0]
+
+    print('Found {0} null time-series in ROI mask'.format(len(zeros_in_roi)),
+          flush=True)
+    print('Found {0} null time-series in brain mask'.format(len(zeros_out_roi)),
+          flush=True)
+
+    print("Removing null time-series from data...", end="", flush=True)
+
+    roi_mask[tuple(idx_in_roi[:, zeros_in_roi])] = False
+    brain_mask[tuple(idx_out_roi[:, zeros_out_roi])] = False
+
+    data_in_roi = numpy.delete(data_in_roi, zeros_in_roi, axis=1)
+    data_out_roi = numpy.delete(data_out_roi, zeros_out_roi, axis=1)
+
+    print("\rRemoving null time-series from data... Done!", flush=True)
+
+    print('Number brain voxels = {0}'.format(numpy.sum(brain_mask)),
+          flush=True)
+    print('Number ROI voxels = {0}'.format(numpy.sum(roi_mask)),
+          flush=True)
+
+    num_voxels_in_roi = data_in_roi.shape[1]
+
+    data = numpy.hstack((data_in_roi, data_out_roi))
+
+    # Delete references to memory
+    # (the garbage collector will dealocate the memory if necessary)
+    del nifti_data, data_in_roi, data_out_roi
+
     #
     # Compute Haak mapping
     #
-    embedding, connectopy, roi_mask = haak_mapping(nifti_image, roi_mask, brain_mask, out_path)
+    embedding, connectopy = haak_mapping(data, num_voxels_in_roi, roi_mask, out_path)
 
     # Slice coordinates (plane, axis, value, axis_index)
-    slice_indexes = [('X-Z', 'Y', 65, 1), ('Y-Z', 'X', 18, 0), ('X-Y', 'Z', 50, 2)]
+    #slice_indexes = [('X-Z', 'Y', 65, 1), ('Y-Z', 'X', 18, 0), ('X-Y', 'Z', 50, 2)]
+    slice_indexes = [('X-Z', 'Y', 55, 1), ('Y-Z', 'X', 25, 0), ('X-Y', 'Z', 69, 2)]
 
     #
     # Display embedding
