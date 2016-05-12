@@ -266,7 +266,7 @@ def haak_mapping(data, num_voxels_in_roi, roi_mask, out_path='.'):
     #
     ###
 
-    print("tSNE embedding...", flush=True)
+    print("tSNE embedding...", end="", flush=True)
 
     if out_path is not None and os.path.isfile(filename_embedding):
         embedding = numpy.load(filename_embedding)
@@ -316,7 +316,10 @@ def haak_mapping(data, num_voxels_in_roi, roi_mask, out_path='.'):
 
     return embedding, connectopic_map
 
-def visualize_volume(data, fig, title, cmap, slice_indexes, brain_mask, roi_mask):
+def visualize_volume(fig, data, brain_mask, roi_mask, title, cmap, slice_indexes):
+    """ Visualize 2-dimensional views of the brain
+
+    """
 
     # Get voxels color from embedding
     min_val = numpy.min(data, axis=0)
@@ -325,10 +328,10 @@ def visualize_volume(data, fig, title, cmap, slice_indexes, brain_mask, roi_mask
     fun_cmap = pyplot.get_cmap(cmap)
     clr_rgb = fun_cmap(data_norm.flatten())
 
-    def get_slice_coords(mask, plane, dims):
+    def get_slice_coords(mask, plane):
         coords_mask = numpy.where(mask)
-        coords_idx = numpy.where(coords_mask[plane[3]] == plane[2])
-        return coords_mask[dims[0]][coords_idx], coords_mask[dims[1]][coords_idx]
+        coords_idx = numpy.where(coords_mask[plane[3]] == plane[2])[0]
+        return coords_mask, coords_idx
 
     #
     # Display embedding
@@ -341,29 +344,38 @@ def visualize_volume(data, fig, title, cmap, slice_indexes, brain_mask, roi_mask
         dims = numpy.delete(numpy.arange(3), slice_indexes[i][3])
 
         # Plot brain
-        coords_brain = get_slice_coords(brain_mask, slice_indexes[i], dims)
-        axes[i].scatter(coords_brain[0], coords_brain[1], c='k', s=15, edgecolors='face')
+        coords_mask, coords_idx = get_slice_coords(brain_mask, slice_indexes[i])
+        coords_brain_x = coords_mask[dims[0]][coords_idx]
+        coords_brain_y = coords_mask[dims[1]][coords_idx]
+        axes[i].scatter(coords_brain_x, coords_brain_y,
+                        c='k', s=15, edgecolors='face')
 
         axes[i].hold(True)
 
         # Plot ROI
-        coords_roi = get_slice_coords(roi_mask, slice_indexes[i], dims)
-        axes[i].scatter(coords_roi[0], coords_roi[1], c=clr_rgb, s=15, edgecolors='face')
+        coords_mask, coords_idx = get_slice_coords(roi_mask, slice_indexes[i])
+        coords_roi_x = coords_mask[dims[0]][coords_idx]
+        coords_roi_y = coords_mask[dims[1]][coords_idx]
+        axes[i].scatter(coords_roi_x, coords_roi_y,
+                        c=clr_rgb[coords_idx, :], s=15, edgecolors='face')
 
         axes[i].set_title("{0} at slice {2}={3}".format(title, *slice_indexes[i]))
         axes[i].legend(("Cortex", "ROI"), loc=2)
         axes[i].grid(True)
 
+    #
+    # Apply stylistic adjustments
+    #
 
     # Set axis limits
     coords_3d = numpy.where(roi_mask)
     coords_x = numpy.sort(coords_3d[0])
     coords_y = numpy.sort(coords_3d[1])
     coords_z = numpy.sort(coords_3d[2])
-    axes[0].set_xlim([coords_x[0] - 5, coords_x[-1] + 5])
-    axes[0].set_ylim([coords_z[0] - 5, coords_z[-1] + 5])
-    axes[1].set_xlim([coords_y[0] - 5, coords_y[-1] + 5])
-    axes[2].set_ylim([coords_y[0] - 5, coords_y[-1] + 5])
+    axes[0].set_xlim([coords_x[0] - 7, coords_x[-1] + 7])
+    axes[0].set_ylim([coords_z[0] - 7, coords_z[-1] + 7])
+    axes[1].set_xlim([coords_y[0] - 7, coords_y[-1] + 7])
+    axes[2].set_ylim([coords_y[0] - 7, coords_y[-1] + 7])
 
     # Remove shared borders
     axes[0].spines['bottom'].set_visible(False)
@@ -394,14 +406,67 @@ def visualize_volume(data, fig, title, cmap, slice_indexes, brain_mask, roi_mask
     cbar.set_ticklabels([])
 
 
+def _normalize_nifti(image_path, fwhm=6):
+        """
+        Load a nifti 4D image, apply a spatial smooth and normalize it
+        along the temporal axis. The normalization step subtract and
+        divide the voxels' values by their means along the temporal axis.
+
+        Parameters
+        ----------
+        image_path: string
+            Filename of the 4D Nifti image.
+
+        fwhm: float, (default: 6)
+            Full width half maximum window dimension used to smooth the
+            image. The same value will be used for all 3 dimensions.
+
+        Returns
+        -------
+        nifti_data: ndarray, shape (N, )
+            Voxels' values normalized that were active at least at one
+            timepoint during the scan.
+
+        idx_brain: tuple, shape (3)
+            X,Y,Z coordinates of the 3D region where the active voxels
+            are located.
+        """
+
+        # Smooth
+        nifti_image = image.smooth_img(image_path, 6)
+        nifti_data = nifti_image.get_data()
+        nifti_data_shape = nifti_data.shape
+
+        # Keep just non-zero voxels
+        is_zero = numpy.abs(nifti_data) < numpy.finfo(nifti_data.dtype).eps
+        idx_brain = numpy.where(~numpy.all(is_zero, axis=-1))
+
+        # Calc mean
+        nifti_data = nifti_data[idx_brain]
+        nifti_data_mean = numpy.mean(nifti_data, axis=-1)[..., numpy.newaxis]
+
+        # Demean and normalize
+        nifti_data = nifti_data - nifti_data_mean
+        nifti_data = nifti_data / nifti_data_mean
+
+        return nifti_data, idx_brain
+
+
 """ Run pipeline
 """
 if __name__ == "__main__":
 
+    #
+    # Define parameters
+    #
     subject = '103414'
-    session = 'REST1'
+    session = 'REST2'
     scans = ['LR', 'RL']
+    hemisphere = 'LH'  # LH or RH
 
+    #
+    # Define input/output locations
+    #
     image_path = '/Users/michele/Development/Workspaces/' \
                  'UpWork/Morgan_Hough/Resources'
     image_path_0 = image_path + \
@@ -413,8 +478,11 @@ if __name__ == "__main__":
 
     out_path = '/Users/michele/Development/Workspaces/UpWork/' \
                'Morgan_Hough/Results/connectopic_mapping/manifold_v2/' \
-               'rfMRI_{0}_{1}'.format(subject, session)
+               'rfMRI_{0}_{1}_{2}'.format(subject, session, hemisphere)
 
+    #
+    # Load ROI and brain masks
+    #
     print("Loading ROI from atlas...", end="", flush=True)
 
     # Load M1 region
@@ -430,107 +498,92 @@ if __name__ == "__main__":
     for index in m1_indexes:
         roi_mask[harvard_oxford_data == index] = True
 
-    # Keep just left part
+    # Keep just one hemisphere
     roi_mask_width = roi_mask.shape[0]
-    roi_mask[int(roi_mask_width/2):, :, :] = False
+    roi_mask_half_width = int(roi_mask_width/2)
+
+    if hemisphere == 'LH':
+        roi_mask[roi_mask_half_width:, :, :] = False
+    else:
+        roi_mask[:roi_mask_half_width:, :, :] = False
 
     print("\rLoading ROI from atlas... Done!", flush=True)
 
     print("Loading brain mask...", end="", flush=True)
 
-    #
     # Load brain mask
-    #
     brain_mask = numpy.zeros(harvard_oxford_data.shape, dtype=bool)
     brain_mask[numpy.nonzero(harvard_oxford_data)] = True
 
     print("\rLoading brain mask... Done!", flush=True)
 
+    #
+    # Load Nifti images, smooth with FWHM=6, compute % temporal change
+    #
     print("Loading Nifti image...", end="", flush=True)
 
-    #
-    # Load Nifti images, smooth with FWHM=6, calc per voxel % change
-    #
-    def norm_nifti(image_path):
-        # Smooth
-        nifti_image = image.smooth_img(image_path, 6)
-        nifti_data = nifti_image.get_data()
-        nifti_data_shape = nifti_data.shape
-        # Keep just non-zero voxels
-        is_zero = numpy.abs(nifti_data) < numpy.finfo(nifti_data.dtype).eps
-        idx_brain = numpy.where(~numpy.all(is_zero, axis=-1))
-        # Calc mean
-        nifti_data = nifti_data[idx_brain]
-        nifti_data_mean = numpy.mean(nifti_data, axis=-1)[..., numpy.newaxis]
-        # Demean and normalize
-        nifti_data = nifti_data - nifti_data_mean
-        nifti_data = nifti_data / nifti_data_mean
-        data = numpy.zeros(nifti_data_shape, dtype=numpy.float32)
-        data[idx_brain] = nifti_data
-        return data
+    nifti_data_0, idx_brain_0 = _normalize_nifti(image_path_0)
+    nifti_data_1, idx_brain_1 = _normalize_nifti(image_path_1)
 
-    nifti_data_0 = norm_nifti(image_path_0)
-    nifti_data_1 = norm_nifti(image_path_1)
+    def get_idx_unique(idx, dim):
+        """ Transforms X,Y,Z coords to unique index.
+        """
+        return idx[0]*dim[1]*dim[2] + idx[1]*dim[2] + idx[2]
 
-    nifti_data = numpy.concatenate((nifti_data_0, nifti_data_1), axis=-1)
+    # Keep just voxels that are non-zero in both scans and inside
+    # brain mask
+    brain_0 = numpy.zeros(brain_mask.shape, dtype=bool)
+    brain_1 = numpy.zeros(brain_mask.shape, dtype=bool)
 
-    # Delete references to memory (this objects are ~4GB)
-    # Note: this doesn't dealocate memory; the garbage collector will
-    # when it doesn't find the references
-    del nifti_data_0, nifti_data_1
+    brain_0[idx_brain_0] = True
+    brain_1[idx_brain_1] = True
+
+    # Update masks
+    brain_mask = brain_mask * brain_0 * brain_1
+    roi_mask = roi_mask * brain_mask
+    nonroi_mask = ~roi_mask * brain_mask
+
+    # Generate brain indexes
+    idx_unique_brain_0 = get_idx_unique(idx_brain_0, brain_mask.shape)
+    idx_unique_brain_1 = get_idx_unique(idx_brain_1, brain_mask.shape)
+
+    # Generate ROI indexes
+    idx_roi_mask = numpy.nonzero(roi_mask)
+
+    idx_unique_roi = get_idx_unique(idx_roi_mask, brain_mask.shape)
+
+    is_roi_0 = numpy.in1d(idx_unique_brain_0, idx_unique_roi)
+    is_roi_1 = numpy.in1d(idx_unique_brain_1, idx_unique_roi)
+
+    # Generate nonROI indexes
+    idx_nonroi_mask = numpy.nonzero(nonroi_mask)
+
+    idx_unique_nonroi = get_idx_unique(idx_nonroi_mask, brain_mask.shape)
+
+    is_nonroi_0 = numpy.in1d(idx_unique_brain_0, idx_unique_nonroi)
+    is_nonroi_1 = numpy.in1d(idx_unique_brain_1, idx_unique_nonroi)
+
+    # Merge data
+    num_voxels_in_roi = numpy.sum(is_roi_0)
+    data = numpy.concatenate((
+           numpy.concatenate((nifti_data_0[is_roi_0],
+                              nifti_data_1[is_roi_1]), axis=-1),
+           numpy.concatenate((nifti_data_0[is_nonroi_0],
+                              nifti_data_1[is_nonroi_1]), axis=-1)), axis=0).T
+
+    assert(numpy.sum(is_roi_0) + numpy.sum(is_nonroi_0) == numpy.sum(brain_mask, axis=None))
+    assert(numpy.sum(is_roi_1) + numpy.sum(is_nonroi_1) == numpy.sum(brain_mask, axis=None))
 
     print("\rLoading Nifti image... Done!", flush=True)
-
-    assert(nifti_data.shape[:-1] == roi_mask.shape)
-    assert(roi_mask.shape == brain_mask.shape)
-
-    # Get (time, num_voxels)-shaped array and voxels' indexes in
-    # the original Nifti image from the image and a mask
-    def extract_data(nifti_image, mask):
-        assert(len(nifti_image.shape) == 4)
-        assert(len(mask.shape) == 3)
-        idx = numpy.asarray(numpy.where(mask))
-        data_roi = nifti_image[mask, :].T
-        return data_roi, idx
-
-    print("Extracting time-series from Nifti image...", end="", flush=True)
-
-    # Voxels/Features in column order
-    data_in_roi, idx_in_roi = extract_data(nifti_data, roi_mask * brain_mask)
-    data_out_roi, idx_out_roi = extract_data(nifti_data, ~roi_mask * brain_mask)
-
-    print("\rExtracting time-series from Nifti image... Done!", flush=True)
-
-    zeros_in_roi = numpy.where(numpy.all(data_in_roi == 0, axis=0))[0]
-    zeros_out_roi = numpy.where(numpy.all(data_out_roi == 0, axis=0))[0]
-
-    print('Found {0} null time-series in ROI mask'.format(len(zeros_in_roi)),
-          flush=True)
-    print('Found {0} null time-series in brain mask'.format(len(zeros_out_roi)),
-          flush=True)
-
-    print("Removing null time-series from data...", end="", flush=True)
-
-    roi_mask[tuple(idx_in_roi[:, zeros_in_roi])] = False
-    brain_mask[tuple(idx_out_roi[:, zeros_out_roi])] = False
-
-    data_in_roi = numpy.delete(data_in_roi, zeros_in_roi, axis=1)
-    data_out_roi = numpy.delete(data_out_roi, zeros_out_roi, axis=1)
-
-    print("\rRemoving null time-series from data... Done!", flush=True)
 
     print('Number brain voxels = {0}'.format(numpy.sum(brain_mask)),
           flush=True)
     print('Number ROI voxels = {0}'.format(numpy.sum(roi_mask)),
           flush=True)
 
-    num_voxels_in_roi = data_in_roi.shape[1]
-
-    data = numpy.hstack((data_in_roi, data_out_roi))
-
-    # Delete references to memory
-    # (the garbage collector will dealocate the memory if necessary)
-    del nifti_data, data_in_roi, data_out_roi
+    os.makedirs(out_path, exist_ok=True)
+    numpy.save(out_path + '/roi_mask.npy', roi_mask)
+    numpy.save(out_path + '/brain_mask.npy', brain_mask)
 
     #
     # Compute Haak mapping
@@ -538,19 +591,30 @@ if __name__ == "__main__":
     embedding, connectopy = haak_mapping(data, num_voxels_in_roi, roi_mask, out_path)
 
     # Slice coordinates (plane, axis, value, axis_index)
-    #slice_indexes = [('X-Z', 'Y', 65, 1), ('Y-Z', 'X', 18, 0), ('X-Y', 'Z', 50, 2)]
-    slice_indexes = [('X-Z', 'Y', 55, 1), ('Y-Z', 'X', 25, 0), ('X-Y', 'Z', 69, 2)]
+
+    x = 18  # 18 or 25
+    if hemisphere == 'RH':
+        x = brain_mask.shape[0] - x
+
+    slice_indexes = [('X-Z', 'Y', 65, 1), ('Y-Z', 'X', x, 0), ('X-Y', 'Z', 50, 2)]
+    #slice_indexes = [('X-Z', 'Y', 55, 1), ('Y-Z', 'X', x, 0), ('X-Y', 'Z', 69, 2)]
 
     #
     # Display embedding
     #
     fig = pyplot.figure(1, tight_layout=True)
-    visualize_volume(embedding, fig, "Voxels after Manifold Learning", 'terrain', slice_indexes, brain_mask, roi_mask)
+    visualize_volume(fig, numpy.max(embedding) - embedding,
+                     brain_mask, roi_mask,
+                     "Voxels after Manifold Learning",
+                     'terrain', slice_indexes)
 
     #
     # Display connectopy
     #
     fig = pyplot.figure(2, tight_layout=True)
-    visualize_volume(connectopy, fig, "Voxels after Gaussian Processes", 'terrain', slice_indexes, brain_mask, roi_mask)
+    visualize_volume(fig, numpy.max(connectopy) - connectopy,
+                     brain_mask, roi_mask,
+                     "Voxels after Gaussian Processes",
+                     'terrain', slice_indexes)
 
     pyplot.show()
