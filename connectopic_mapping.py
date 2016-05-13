@@ -124,7 +124,7 @@ def compute_similarity_map(fingerprints, idx_chunk=None):
     return eta2_coef
 
 
-def haak_mapping(data, num_voxels_in_roi, roi_mask, out_path='.'):
+def haak_mapping(data, num_voxels_in_roi, roi_mask, manifold_learning='tSNE', out_path='.'):
     """
     Fully data-driven methods for mapping connectopies using
     functional magnetic resonance imaging (fMRI) data acquired at
@@ -136,7 +136,7 @@ def haak_mapping(data, num_voxels_in_roi, roi_mask, out_path='.'):
 
     Parameters
     ----------
-    nifti_image : nibabel
+    data : numpy.ndarray, shape (n_timepoints, n_voxels)
         4D nifti image on which to compute the connectopies.
 
     roi_mask : numpy.ndarray,
@@ -153,7 +153,13 @@ def haak_mapping(data, num_voxels_in_roi, roi_mask, out_path='.'):
         not included in the analysis. If None the entire nifti image
         is considered for the analysis.
 
-    out_path : string, (default: None)
+    manifold_learning : string, (options: 'tSNE', 'spectral'),
+        (default: 'tSNE')
+        Manifold learning algorithm used to find  lower dimensional
+        representation of the correlation map between voxels. The options
+        are tSNE or spectral embedding ()
+
+    out_path : string, (default: '.')
         folder where to save the intermediate results. If the folder
         doesn't exist the method tries to create one. By default the
         results are saved in the same folder from where the script is
@@ -163,17 +169,25 @@ def haak_mapping(data, num_voxels_in_roi, roi_mask, out_path='.'):
 
     """
 
+    assert(manifold_learning in ['tSNE', 'spectral'])
+
     # File names of intermediate results
     if out_path is not None:
         # Create folder and subfolders if they don't exist
         os.makedirs(out_path, exist_ok=True)
         # Instantiate filename variables
-        filename_data_s = out_path + os.sep + 'data_s.npy'
-        filename_data_v = out_path + os.sep + 'data_v.npy'
-        filename_fingerprints = out_path + os.sep + 'fingerprints.npy'
-        filename_eta2_coef = out_path + os.sep + 'eta2_coef.npy'
-        filename_embedding = out_path + os.sep + 'embedding.npy'
-        filename_connectopic_map = out_path + os.sep + 'connectopic_map.npy'
+        filename_data_s = out_path + os.sep + \
+                          'data_s.npy'
+        filename_data_v = out_path + os.sep + \
+                          'data_v.npy'
+        filename_fingerprints = out_path + os.sep + \
+                                'fingerprints.npy'
+        filename_eta2_coef = out_path + os.sep + \
+                             'eta2_coef.npy'
+        filename_embedding = out_path + os.sep + \
+                             'embedding_{0}.npy'.format(manifold_learning)
+        filename_connectopic_map = out_path + os.sep + \
+                                   'connectopic_map_{0}.npy'.format(manifold_learning)
 
     num_cpu = multiprocessing.cpu_count()
 
@@ -266,7 +280,7 @@ def haak_mapping(data, num_voxels_in_roi, roi_mask, out_path='.'):
     #
     ###
 
-    print("tSNE embedding...", end="", flush=True)
+    print("Learning embedding...", end="", flush=True)
 
     if out_path is not None and os.path.isfile(filename_embedding):
         embedding = numpy.load(filename_embedding)
@@ -274,20 +288,26 @@ def haak_mapping(data, num_voxels_in_roi, roi_mask, out_path='.'):
 
         distances = 2 * (1 - eta2_coef)
 
-        manifold_tsne = manifold.TSNE(n_components=1,
-                                      perplexity=30.0,
-                                      early_exaggeration=4.0,
-                                      learning_rate=1000.0,
-                                      n_iter=1000,
-                                      n_iter_without_progress=30,
-                                      min_grad_norm=1e-07,
-                                      metric='precomputed',
-                                      init='random',
-                                      verbose=1,
-                                      random_state=None,
-                                      method='exact')
+        if manifold_learning == 'tSNE':
+            manifold_class = manifold.TSNE(n_components=1,
+                                          perplexity=30.0,
+                                          early_exaggeration=4.0,
+                                          learning_rate=1000.0,
+                                          n_iter=1000,
+                                          n_iter_without_progress=30,
+                                          min_grad_norm=1e-07,
+                                          metric='precomputed',
+                                          init='random',
+                                          verbose=1,
+                                          random_state=None,
+                                          method='exact')
 
-        embedding = manifold_tsne.fit_transform(distances)
+        elif manifold_learning == 'spectral':
+            manifold_class = manifold.SpectralEmbedding(n_components=1,
+                                                        affinity='precomputed',
+                                                        eigen_solver=None)
+
+        embedding = manifold_class.fit_transform(distances)
 
         if out_path is not None:
             numpy.save(filename_embedding, embedding)
@@ -423,12 +443,12 @@ def _normalize_nifti(image_path, fwhm=6):
 
         Returns
         -------
-        nifti_data: ndarray, shape (N, )
+        nifti_data: numpy.ndarray, shape (N, )
             Voxels' values normalized that were active at least at one
             timepoint during the scan.
 
         idx_brain: tuple, shape (3)
-            X,Y,Z coordinates of the 3D region where the active voxels
+            X,Y,Z-coordinates of the 3D region where the active voxels
             are located.
         """
 
@@ -460,9 +480,9 @@ if __name__ == "__main__":
     # Define parameters
     #
     subject = '103414'
-    session = 'REST2'
+    session = 'REST1'
     scans = ['LR', 'RL']
-    hemisphere = 'LH'  # LH or RH
+    hemisphere = 'RH'  # LH or RH
 
     #
     # Define input/output locations
@@ -520,10 +540,17 @@ if __name__ == "__main__":
     #
     # Load Nifti images, smooth with FWHM=6, compute % temporal change
     #
-    print("Loading Nifti image...", end="", flush=True)
+    print("Loading Nifti images (1/2)...", end="", flush=True)
 
     nifti_data_0, idx_brain_0 = _normalize_nifti(image_path_0)
+
+    print("\rLoading Nifti images (2/2)...", end="", flush=True)
+
     nifti_data_1, idx_brain_1 = _normalize_nifti(image_path_1)
+
+    print("\rLoading Nifti images... Done!", flush=True)
+
+    print("Concatenating Nifti images...", end="", flush=True)
 
     def get_idx_unique(idx, dim):
         """ Transforms X,Y,Z coords to unique index.
@@ -571,10 +598,11 @@ if __name__ == "__main__":
            numpy.concatenate((nifti_data_0[is_nonroi_0],
                               nifti_data_1[is_nonroi_1]), axis=-1)), axis=0).T
 
+    print(data.shape)
     assert(numpy.sum(is_roi_0) + numpy.sum(is_nonroi_0) == numpy.sum(brain_mask, axis=None))
     assert(numpy.sum(is_roi_1) + numpy.sum(is_nonroi_1) == numpy.sum(brain_mask, axis=None))
 
-    print("\rLoading Nifti image... Done!", flush=True)
+    print("\rConcatenating Nifti images... Done!", flush=True)
 
     print('Number brain voxels = {0}'.format(numpy.sum(brain_mask)),
           flush=True)
@@ -588,22 +616,26 @@ if __name__ == "__main__":
     #
     # Compute Haak mapping
     #
-    embedding, connectopy = haak_mapping(data, num_voxels_in_roi, roi_mask, out_path)
+    embedding, connectopy = haak_mapping(data,
+                                         num_voxels_in_roi,
+                                         roi_mask,
+                                         'spectral',
+                                         out_path)
 
     # Slice coordinates (plane, axis, value, axis_index)
 
-    x = 18  # 18 or 25
+    x = 25  # 18 or 25
     if hemisphere == 'RH':
         x = brain_mask.shape[0] - x
 
-    slice_indexes = [('X-Z', 'Y', 65, 1), ('Y-Z', 'X', x, 0), ('X-Y', 'Z', 50, 2)]
-    #slice_indexes = [('X-Z', 'Y', 55, 1), ('Y-Z', 'X', x, 0), ('X-Y', 'Z', 69, 2)]
+    #slice_indexes = [('X-Z', 'Y', 65, 1), ('Y-Z', 'X', x, 0), ('X-Y', 'Z', 50, 2)]
+    slice_indexes = [('X-Z', 'Y', 55, 1), ('Y-Z', 'X', x, 0), ('X-Y', 'Z', 69, 2)]
 
     #
     # Display embedding
     #
     fig = pyplot.figure(1, tight_layout=True)
-    visualize_volume(fig, numpy.max(embedding) - embedding,
+    visualize_volume(fig, embedding,
                      brain_mask, roi_mask,
                      "Voxels after Manifold Learning",
                      'terrain', slice_indexes)
@@ -612,7 +644,7 @@ if __name__ == "__main__":
     # Display connectopy
     #
     fig = pyplot.figure(2, tight_layout=True)
-    visualize_volume(fig, numpy.max(connectopy) - connectopy,
+    visualize_volume(fig, connectopy,
                      brain_mask, roi_mask,
                      "Voxels after Gaussian Processes",
                      'terrain', slice_indexes)
