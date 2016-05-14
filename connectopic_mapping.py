@@ -5,6 +5,7 @@ import matplotlib
 import multiprocessing
 import GPy
 from nilearn import datasets, image
+from scipy.sparse import csgraph
 from sklearn import manifold
 from matplotlib import pyplot
 from mpl_toolkits.axes_grid1 import Grid
@@ -303,6 +304,49 @@ def haak_mapping(data, num_voxels_in_roi, roi_mask, manifold_learning='tSNE', ou
                                           method='exact')
 
         elif manifold_learning == 'spectral':
+
+            print("Searching connected graph's min threshold value...",
+                  end="", flush=True)
+
+            # Binary search a similarity threshold, that is the minimum value
+            # of the L2-norm between pair of voxels' similarities required
+            # such that all the voxels in the ROI are connected.
+
+            similarity_values = numpy.sort(distances, axis=None)
+            high_index = num_voxels_in_roi**2 - 1
+            low_index = 0
+            min_threshold = similarity_values[-1]
+
+            while True:
+
+                similarity_index = int((high_index + low_index) / 2)
+                similarity_threshold = similarity_values[similarity_index]
+
+                # Transform similarity matrix into a connected graph
+                adjacency = distances < similarity_threshold
+
+                # Find connected components
+                num_components, _ = csgraph.connected_components(adjacency,
+                                                                 directed=False)
+
+                if num_components > 1:
+                    low_index = similarity_index + 1
+                else:
+                    high_index = similarity_index - 1
+                    min_threshold = min(min_threshold, similarity_threshold)
+
+                if high_index < low_index:
+                    break
+
+            adjacency = distances < min_threshold
+
+            print("\rSearching connected graph's min threshold value... Done!",
+                  flush=True)
+
+            # Disconnect distant voxels
+            eta2_coef[~adjacency] = 0
+            distances = eta2_coef
+
             manifold_class = manifold.SpectralEmbedding(n_components=1,
                                                         affinity='precomputed',
                                                         eigen_solver=None)
@@ -312,7 +356,7 @@ def haak_mapping(data, num_voxels_in_roi, roi_mask, manifold_learning='tSNE', ou
         if out_path is not None:
             numpy.save(filename_embedding, embedding)
 
-    print("\rtSNE embedding... Done!", flush=True)
+    print("\rLearning embedding... Done!", flush=True)
 
     ###
     #
@@ -482,7 +526,7 @@ if __name__ == "__main__":
     subject = '103414'
     session = 'REST1'
     scans = ['LR', 'RL']
-    hemisphere = 'RH'  # LH or RH
+    hemisphere = 'LH'  # LH or RH
 
     #
     # Define input/output locations
@@ -619,17 +663,26 @@ if __name__ == "__main__":
     embedding, connectopy = haak_mapping(data,
                                          num_voxels_in_roi,
                                          roi_mask,
-                                         'spectral',
-                                         out_path)
+                                         manifold_learning='spectral',
+                                         out_path=out_path)
 
     # Slice coordinates (plane, axis, value, axis_index)
 
     x = 25  # 18 or 25
-    if hemisphere == 'RH':
-        x = brain_mask.shape[0] - x
 
-    #slice_indexes = [('X-Z', 'Y', 65, 1), ('Y-Z', 'X', x, 0), ('X-Y', 'Z', 50, 2)]
-    slice_indexes = [('X-Z', 'Y', 55, 1), ('Y-Z', 'X', x, 0), ('X-Y', 'Z', 69, 2)]
+    if hemisphere == 'RH':
+        bx = brain_mask.shape[0] - x
+    else:
+        bx = x
+
+    if x == 18:
+        slice_indexes = [('X-Z', 'Y', 65, 1),
+                         ('Y-Z', 'X', bx, 0),
+                         ('X-Y', 'Z', 50, 2)]
+    elif x == 25:
+        slice_indexes = [('X-Z', 'Y', 55, 1),
+                         ('Y-Z', 'X', bx, 0),
+                         ('X-Y', 'Z', 69, 2)]
 
     #
     # Display embedding
