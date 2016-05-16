@@ -291,17 +291,17 @@ def haak_mapping(data, num_voxels_in_roi, roi_mask, manifold_learning='tSNE', ou
 
         if manifold_learning == 'tSNE':
             manifold_class = manifold.TSNE(n_components=1,
-                                          perplexity=30.0,
-                                          early_exaggeration=4.0,
-                                          learning_rate=1000.0,
-                                          n_iter=1000,
-                                          n_iter_without_progress=30,
-                                          min_grad_norm=1e-07,
-                                          metric='precomputed',
-                                          init='random',
-                                          verbose=1,
-                                          random_state=None,
-                                          method='exact')
+                                           perplexity=30.0,
+                                           early_exaggeration=4.0,
+                                           learning_rate=1000.0,
+                                           n_iter=1000,
+                                           n_iter_without_progress=30,
+                                           min_grad_norm=1e-07,
+                                           metric='precomputed',
+                                           init='random',
+                                           verbose=2,
+                                           random_state=0,
+                                           method='exact')
 
         elif manifold_learning == 'spectral':
 
@@ -663,43 +663,52 @@ if __name__ == "__main__":
     embedding, connectopy = haak_mapping(data,
                                          num_voxels_in_roi,
                                          roi_mask,
-                                         manifold_learning='spectral',
+                                         manifold_learning='tSNE',
                                          out_path=out_path)
 
+    #
     # Slice coordinates (plane, axis, value, axis_index)
-
-    x = 25  # 18 or 25
-
-    if hemisphere == 'RH':
-        bx = brain_mask.shape[0] - x
-    else:
-        bx = x
-
-    if x == 18:
-        slice_indexes = [('X-Z', 'Y', 65, 1),
-                         ('Y-Z', 'X', bx, 0),
-                         ('X-Y', 'Z', 50, 2)]
-    elif x == 25:
-        slice_indexes = [('X-Z', 'Y', 55, 1),
-                         ('Y-Z', 'X', bx, 0),
-                         ('X-Y', 'Z', 69, 2)]
-
     #
-    # Display embedding
-    #
-    fig = pyplot.figure(1, tight_layout=True)
-    visualize_volume(fig, embedding,
-                     brain_mask, roi_mask,
-                     "Voxels after Manifold Learning",
-                     'terrain', slice_indexes)
 
-    #
-    # Display connectopy
-    #
-    fig = pyplot.figure(2, tight_layout=True)
-    visualize_volume(fig, connectopy,
-                     brain_mask, roi_mask,
-                     "Voxels after Gaussian Processes",
-                     'terrain', slice_indexes)
+    # X = 18
+    slice_indexes_18 = [('X-Z', 'Y', 65, 1),
+                       ('Y-Z', 'X', 18, 0),
+                       ('X-Y', 'Z', 50, 2)]
+
+    # X = 25
+    slice_indexes_25 = [('X-Z', 'Y', 55, 1),
+                       ('Y-Z', 'X', 25, 0),
+                       ('X-Y', 'Z', 69, 2)]
+
+    slices = slice_indexes_18, slice_indexes_25
+    i_plot = 1
+
+    for slice_indexes in slices:
+
+        if hemisphere == 'RH':
+            slice_indexes[1] = slice_indexes[1][0], \
+                               slice_indexes[1][1], \
+                               brain_mask.shape[0] - slice_indexes[1][2], \
+                               slice_indexes[1][3], \
+
+        #
+        # Display embedding
+        #
+        fig = pyplot.figure(i_plot, tight_layout=True)
+        visualize_volume(fig, embedding,
+                         brain_mask, roi_mask,
+                         "Voxels after Manifold Learning",
+                         'terrain', slice_indexes)
+        i_plot += 1
+
+        #
+        # Display connectopy
+        #
+        fig = pyplot.figure(i_plot, tight_layout=True)
+        visualize_volume(fig, connectopy,
+                         brain_mask, roi_mask,
+                         "Voxels after Gaussian Processes",
+                         'terrain', slice_indexes)
+        i_plot += 1
 
     pyplot.show()
