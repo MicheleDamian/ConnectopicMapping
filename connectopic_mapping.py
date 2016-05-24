@@ -125,7 +125,7 @@ def compute_similarity_map(fingerprints, idx_chunk=None):
     return eta2_coef
 
 
-def haak_mapping(data, num_voxels_in_roi, roi_mask, manifold_learning='tSNE', out_path='.'):
+def haak_mapping(data, num_voxels_in_roi, roi_mask, manifold_learning='spectral', out_path='.'):
     """
     Fully data-driven methods for mapping connectopies using
     functional magnetic resonance imaging (fMRI) data acquired at
@@ -154,8 +154,8 @@ def haak_mapping(data, num_voxels_in_roi, roi_mask, manifold_learning='tSNE', ou
         not included in the analysis. If None the entire nifti image
         is considered for the analysis.
 
-    manifold_learning : string, (options: 'tSNE', 'spectral'),
-        (default: 'tSNE')
+    manifold_learning : string, (options: 'tSNE', 'spectral', 'MDS'),
+        (default: 'spectral')
         Manifold learning algorithm used to find  lower dimensional
         representation of the correlation map between voxels. The options
         are tSNE or spectral embedding ()
@@ -231,7 +231,7 @@ def haak_mapping(data, num_voxels_in_roi, roi_mask, manifold_learning='tSNE', ou
         num_voxels_svd = data.shape[0] - 1
         data_s_diag = numpy.diag(data_s[:num_voxels_svd])
         data_reprojected = numpy.dot(data_s_diag,
-                                     data_v[:num_voxels_svd, :num_voxels_in_roi])
+                                     data_v[:num_voxels_svd, :num_voxels_in_roi])  #:num_voxels_in_roi
         fingerprints = data_reprojected.T
 
         if out_path is not None:
@@ -244,6 +244,11 @@ def haak_mapping(data, num_voxels_in_roi, roi_mask, manifold_learning='tSNE', ou
     if out_path is not None and os.path.isfile(filename_eta2_coef):
         eta2_coef = numpy.load(filename_eta2_coef)
     else:
+
+        ## Uncomment for computing similarities between ROI
+        ## and non-ROI voxels
+        #num_voxels_in_roi = data.shape[1]
+
         # Distribute load equally among all CPUs
         pool = multiprocessing.Pool(num_cpu)
 
@@ -293,7 +298,7 @@ def haak_mapping(data, num_voxels_in_roi, roi_mask, manifold_learning='tSNE', ou
             manifold_class = manifold.TSNE(n_components=1,
                                            perplexity=30.0,
                                            early_exaggeration=4.0,
-                                           learning_rate=1000.0,
+                                           learning_rate=200.0,
                                            n_iter=1000,
                                            n_iter_without_progress=30,
                                            min_grad_norm=1e-07,
@@ -304,9 +309,6 @@ def haak_mapping(data, num_voxels_in_roi, roi_mask, manifold_learning='tSNE', ou
                                            method='exact')
 
         elif manifold_learning == 'spectral':
-
-            print("Searching connected graph's min threshold value...",
-                  end="", flush=True)
 
             # Binary search a similarity threshold, that is the minimum value
             # of the L2-norm between pair of voxels' similarities required
@@ -340,9 +342,6 @@ def haak_mapping(data, num_voxels_in_roi, roi_mask, manifold_learning='tSNE', ou
 
             adjacency = distances < min_threshold
 
-            print("\rSearching connected graph's min threshold value... Done!",
-                  flush=True)
-
             # Disconnect distant voxels
             eta2_coef[~adjacency] = 0
             distances = eta2_coef
@@ -355,6 +354,7 @@ def haak_mapping(data, num_voxels_in_roi, roi_mask, manifold_learning='tSNE', ou
 
         if out_path is not None:
             numpy.save(filename_embedding, embedding)
+
 
     print("\rLearning embedding... Done!", flush=True)
 
@@ -378,7 +378,7 @@ def haak_mapping(data, num_voxels_in_roi, roi_mask, manifold_learning='tSNE', ou
 
     print("Spatial statistics... Done!", flush=True)
 
-    return embedding, connectopic_map
+    return eta2_coef, embedding, connectopic_map
 
 def visualize_volume(fig, data, brain_mask, roi_mask, title, cmap, slice_indexes):
     """ Visualize 2-dimensional views of the brain
@@ -523,10 +523,10 @@ if __name__ == "__main__":
     #
     # Define parameters
     #
-    subject = '103414'
-    session = 'REST1'
+    subject = '105115'
+    session = 'REST2'
     scans = ['LR', 'RL']
-    hemisphere = 'LH'  # LH or RH
+    hemisphere = 'RH'  # LH or RH
 
     #
     # Define input/output locations
@@ -550,17 +550,17 @@ if __name__ == "__main__":
     print("Loading ROI from atlas...", end="", flush=True)
 
     # Load M1 region
-    dataset = datasets.fetch_atlas_harvard_oxford('cort-maxprob-thr25-2mm')
-    harvard_oxford_labels = numpy.array(dataset.labels)
-    harvard_oxford_maps = nibabel.load(dataset.maps)
-    harvard_oxford_data = harvard_oxford_maps.get_data()
+    cortex_dataset = datasets.fetch_atlas_harvard_oxford('cort-maxprob-thr25-2mm')
+    cortex_labels = numpy.array(cortex_dataset.labels)
+    cortex_maps = nibabel.load(cortex_dataset.maps)
+    cortex_data = cortex_maps.get_data()
 
-    m1_indexes = numpy.where((harvard_oxford_labels == "Precentral Gyrus"))
+    m1_indexes = numpy.where((cortex_labels == "Precentral Gyrus"))[0]
 
     # Build mask from ROI
-    roi_mask = numpy.zeros(harvard_oxford_data.shape, dtype=bool)
+    roi_mask = numpy.zeros(cortex_data.shape, dtype=bool)
     for index in m1_indexes:
-        roi_mask[harvard_oxford_data == index] = True
+        roi_mask[cortex_data == index] = True
 
     # Keep just one hemisphere
     roi_mask_width = roi_mask.shape[0]
@@ -576,10 +576,29 @@ if __name__ == "__main__":
     print("Loading brain mask...", end="", flush=True)
 
     # Load brain mask
-    brain_mask = numpy.zeros(harvard_oxford_data.shape, dtype=bool)
-    brain_mask[numpy.nonzero(harvard_oxford_data)] = True
+    brain_mask = numpy.zeros(cortex_data.shape, dtype=bool)
+    brain_mask[numpy.nonzero(cortex_data)] = True
 
     print("\rLoading brain mask... Done!", flush=True)
+
+    print("Loading white matter mask...", end="", flush=True)
+
+    subcortex_dataset = datasets.fetch_atlas_harvard_oxford('sub-maxprob-thr25-2mm')
+    subcortex_labels = numpy.array(subcortex_dataset.labels)
+    subcortex_maps = nibabel.load(subcortex_dataset.maps)
+    subcortex_data = subcortex_maps.get_data()
+
+    white_indexes = numpy.where((subcortex_labels == "Left Cerebral White Matter") +
+                                (subcortex_labels == "Right Cerebral White Matter"))[0]
+
+    white_mask = numpy.zeros(subcortex_data.shape, dtype=bool)
+    for index in white_indexes:
+        white_mask[subcortex_data == index] = True
+
+    # Remove white matter from brain mask
+    brain_mask = brain_mask * ~white_mask
+
+    print("\rLoading white matter mask... Done!", flush=True)
 
     #
     # Load Nifti images, smooth with FWHM=6, compute % temporal change
@@ -642,7 +661,6 @@ if __name__ == "__main__":
            numpy.concatenate((nifti_data_0[is_nonroi_0],
                               nifti_data_1[is_nonroi_1]), axis=-1)), axis=0).T
 
-    print(data.shape)
     assert(numpy.sum(is_roi_0) + numpy.sum(is_nonroi_0) == numpy.sum(brain_mask, axis=None))
     assert(numpy.sum(is_roi_1) + numpy.sum(is_nonroi_1) == numpy.sum(brain_mask, axis=None))
 
@@ -660,27 +678,27 @@ if __name__ == "__main__":
     #
     # Compute Haak mapping
     #
-    embedding, connectopy = haak_mapping(data,
-                                         num_voxels_in_roi,
-                                         roi_mask,
-                                         manifold_learning='tSNE',
-                                         out_path=out_path)
+    eta2_coef, embedding, connectopy = haak_mapping(data,
+                                                    num_voxels_in_roi,
+                                                    roi_mask,
+                                                    manifold_learning='spectral',
+                                                    out_path=out_path)
 
     #
     # Slice coordinates (plane, axis, value, axis_index)
     #
 
     # X = 18
-    slice_indexes_18 = [('X-Z', 'Y', 65, 1),
+    slice_indexes_0 = [('X-Z', 'Y', 65, 1),
                        ('Y-Z', 'X', 18, 0),
                        ('X-Y', 'Z', 50, 2)]
 
     # X = 25
-    slice_indexes_25 = [('X-Z', 'Y', 55, 1),
+    slice_indexes_1 = [('X-Z', 'Y', 55, 1),
                        ('Y-Z', 'X', 25, 0),
                        ('X-Y', 'Z', 69, 2)]
 
-    slices = slice_indexes_18, slice_indexes_25
+    slices = slice_indexes_0, slice_indexes_1
     i_plot = 1
 
     for slice_indexes in slices:
@@ -698,7 +716,7 @@ if __name__ == "__main__":
         visualize_volume(fig, embedding,
                          brain_mask, roi_mask,
                          "Voxels after Manifold Learning",
-                         'terrain', slice_indexes)
+                         'gist_rainbow', slice_indexes)
         i_plot += 1
 
         #
@@ -708,7 +726,14 @@ if __name__ == "__main__":
         visualize_volume(fig, connectopy,
                          brain_mask, roi_mask,
                          "Voxels after Gaussian Processes",
-                         'terrain', slice_indexes)
+                         'gist_rainbow', slice_indexes)
         i_plot += 1
+
+    #
+    # Projecting connectopy on second semi-hemisphere
+    #
+
+    # For each ROI voxel get most similar out-of-ROI voxel
+    similar_voxel_indexes = numpy.argmax(eta2_coef, axis=0)
 
     pyplot.show()
