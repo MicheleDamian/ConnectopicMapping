@@ -1,14 +1,13 @@
+import multiprocessing
 import os
+import GPy
 import nibabel
 import numpy
-import matplotlib
-import multiprocessing
-import GPy
+from matplotlib import pyplot
+from mpl_toolkits.axes_grid1 import Grid
 from nilearn import datasets, image
 from scipy.sparse import csgraph
 from sklearn import manifold
-from matplotlib import pyplot
-from mpl_toolkits.axes_grid1 import Grid
 
 
 def spatial_statistic(x, y, x_predictions):
@@ -57,70 +56,192 @@ def spatial_statistic(x, y, x_predictions):
     return y_means, y_vars
 
 
-def compute_similarity_map(fingerprints, idx_chunk=None):
+def compute_fingerprints(data, num_fingerprints, num_lower_dim='haak'):
     """
-    Compute the eta2 coefficients from the voxels' fingerprints as described
-    in "Defining functional areas in individual human brains using resting
-    functional connectivity MRI". The result is a symmetric square matrix
-    where each element is a real value in the range 0.0 to 1.0 with 0
-    indicating the pair of voxels is completely dissimilar and 1 equals.
+    Computes the voxels' fingerprints using the left eigenvectors
+    and the eigenvalues from singular value decomposition. Each
+    row of the output matrix represents the correlation between
+    a voxel inside the ROI and the num_lower_dim axis in the lower
+    dimensional space.
 
     Parameters
     ----------
-    fingerprints : numpy.ndarray, shape (n_voxels_in_roi, n_voxels_svd)
-        Boolean 3-dimensional numpy array with the same dimensions of a
-        single frame of the nifti image provided as input. Voxels
-        marked as True are part of the same region of interest (ROI).
+    data : numpy.ndarray, shape (num_timepoints, num_voxels)
+        A real matrix representing the voxels' time-series with one
+        voxel per each column. The first num_fingerprints columns
+        are the voxels on which to compute the fingerprints.
 
-    idx_chunk : numpy.ndarray, shape (K, ), (default: None)
-        Indexes of the in-ROI voxels to consider when computing the eta2
-        coefficients. If None all n_voxels_in_roi are considered.
+    num_fingerprints : int
+        The number of fingerprints to compute.
+
+    num_lower_dim : string or int, (options: 'haak', 'full'), (default: 'haak')
+        The number of dimensions of the lower dimensional space used
+        to compute the fingerprints. If num_lower_dim is a natural
+        number, that is used as dimension. If num_lower_dim='haak',
+        the length of the time-series - 1 is used
+        (see "Connectopic mapping with resting-state fMRI", Haak 2016).
+        If num_lower_dim='full', all dimensions are used and the
+        resulting fingerprints are the correlation of a voxel in the
+        ROI with every other voxel.
+
+    Returns
+    -------
+    fingerprints : numpy.ndarray, shape (num_fingerprints, num_lower_dim)
+        The correlation between the voxels and the lower dimensional
+        embedding.
     """
 
-    num_voxels_in_chunk = idx_chunk.shape[0]
-    num_voxels_in_roi = fingerprints.shape[0]
-    num_voxels_out_roi = fingerprints.shape[1]
+    data_u, data_s, data_v = numpy.linalg.svd(data, full_matrices=False)
+
+    # Keep a just num_lower_dim dimensions
+    if num_lower_dim == 'haak':
+        num_lower_dim = data.shape[0] - 1
+    elif num_lower_dim == 'full':
+        num_lower_dim = data_s.shape[0]
+
+    data_s = data_s[:num_lower_dim]
+    data_v = data_v[:num_lower_dim, :num_fingerprints]
+
+    fingerprints = numpy.dot(numpy.diag(data_s), data_v)
+
+    return fingerprints.T
+
+
+def distribute_similarity_map(fingerprints, num_processes='cpu'):
+    """
+    Create several processes to run the method compute_similarity_map
+    in parallel and balance the load among them.
+
+    Parameters
+    ----------
+    fingerprints : numpy.ndarray, shape (num_fingerprints, num_lower_dim)
+        The correlation between the voxels and the lower dimensional
+        embedding.
+
+    num_processes : string or int, (options: 'cpu'), (default: 'cpu')
+        Number of processes to create. If num_processes='cpu', the method
+        balance the execution among the CPUs available.
+
+    Results
+    -------
+    eta2_coef : numpy.ndarray, shape (num_fingerprints, num_fingerprints)
+        The symmetric matrix containing the eta square coefficients
+        between pairs of voxels.
+
+    """
+
+    num_fingerprints = fingerprints.shape[0]
+
+    # Get number of CPUs available
+    if num_processes == 'cpu':
+        num_processes = multiprocessing.cpu_count()
+
+    # Distribute load equally among all CPUs
+    pool = multiprocessing.Pool(num_processes)
+
+    # Approximation of the optimal fraction of the dataset to
+    # allocate to each CPU
+    processes_idx = numpy.arange(num_processes+1)
+    fingerprints_ratio = processes_idx * 2 / (num_processes * (num_processes+1))
+    fingerprints_idx = (numpy.cumsum(fingerprints_ratio) * num_fingerprints).astype(int)
+
+    pool_idx = [numpy.arange(fingerprints_idx[i], fingerprints_idx[i+1])
+                for i in range(len(fingerprints_idx)-1)]
+
+    starmap_input = [(fingerprints, idx) for idx in pool_idx]
+
+    # Run compute_similarity_map in parallel
+    eta2_chunks = pool.starmap(compute_similarity_map, starmap_input)
+
+    # Merge together results from all processes
+    eta2_coef = numpy.zeros((num_fingerprints, num_fingerprints))
+
+    for i_cpu in range(num_processes):
+        for i_chunk in range(len(pool_idx[i_cpu])):
+
+            i_eta = pool_idx[i_cpu][i_chunk]
+
+            eta2_row = eta2_chunks[i_cpu][i_chunk, i_eta:]
+            eta2_coef[i_eta, i_eta:] = eta2_row
+            eta2_coef[i_eta:, i_eta] = eta2_row
+
+    return eta2_coef
+
+
+def compute_similarity_map(fingerprints, idx_chunk=None):
+    """
+    Compute the eta2 coefficients from the voxels' fingerprints as
+    described in "Defining functional areas in individual human brains
+    using resting functional connectivity MRI", Cohen 2008. The result
+    is a symmetric square matrix where each element is a real value in
+    the range 0.0 to 1.0 with 0 indicating the pair of voxels is completely
+    dissimilar and 1 equals.
+
+    Parameters
+    ----------
+    fingerprints : numpy.ndarray, shape (num_fingerprints, num_lower_dim)
+        The correlation between the voxels and the lower dimensional
+        embedding.
+
+    idx_chunk : numpy.ndarray, shape (K, ), (default: None)
+        Indexes of the num_fingerprints voxels to consider when
+        computing the eta2 coefficients. If idx_chunk=None all
+        num_fingerprints are considered. This parameter can be used
+        to split the computation among several CPUs.
+
+    Returns
+    -------
+    eta2_coef : numpy.ndarray, shape (num_fingerprints, num_fingerprints)
+        The symmetric matrix containing the eta square coefficients
+        between pairs of voxels.
+    """
+
+    num_chunk = idx_chunk.shape[0]
+    num_fingerprints = fingerprints.shape[0]
+    num_lower_dim = fingerprints.shape[1]
 
     if idx_chunk is None:
-        idx_chunk = numpy.arange(0, num_voxels_in_roi)
+        idx_chunk = numpy.arange(0, num_fingerprints)
 
-    # Similarity maps
-    def sum_coeff(fp_0, fp_1, fp_mean):
-        return numpy.sum((fp_0 - fp_mean)**2 + (fp_1 - fp_mean)**2, axis=1)
+    # Utility method to compute eta square
+    def sum_coeff(fingerprints_0, fingerprints_1, fingerprints_mean):
+        addend_0 = (fingerprints_0 - fingerprints_mean)**2
+        addend_1 = (fingerprints_1 - fingerprints_mean)**2
+        return numpy.sum(addend_0 + addend_1, axis=1)
 
-    progress_old = -1
+    # Allocate memory where to store eta square coefficients
+    eta2_coef = numpy.zeros((num_chunk, num_fingerprints))
 
-    eta2_coef = numpy.zeros((num_voxels_in_chunk, num_voxels_in_roi))
+    for i in range(num_chunk):
 
-    for i in range(num_voxels_in_chunk):
+        # Get fingerprint's index
+        chunk_i = idx_chunk[i]
 
-        i_chunk = idx_chunk[i]
-        fingerprints_chunk = fingerprints[i_chunk:, :]
-        num_voxels_from_chunk = num_voxels_in_roi - i_chunk
+        # Fingerprints left to compute
+        num_chunk_i = num_fingerprints - chunk_i
 
-        fp_i = fingerprints[i_chunk, :]
-        fp_i_mat = numpy.repeat(fp_i[numpy.newaxis, :],
-                                num_voxels_from_chunk,
-                                axis=0)
+        # i-th fingerprint to compute
+        fingerprints_i = fingerprints[chunk_i, :][numpy.newaxis, :]
+        fingerprints_i_rep = numpy.repeat(fingerprints_i, num_chunk_i, axis=0)
 
-        fp_means = (fp_i_mat + fingerprints_chunk) / 2
+        # Fingerprints pair to correlate with the i-th
+        fingerprints_from_i = fingerprints[chunk_i:, :]
 
-        fp_means_row = numpy.mean(fp_means, axis=1)
-        fp_means_row_mat = numpy.repeat(fp_means_row[:, numpy.newaxis],
-                                        num_voxels_out_roi,
-                                        axis=1)
+        fingerprints_mean = (fingerprints_i_rep + fingerprints_from_i) / 2
 
-        eta2_num = sum_coeff(fp_i_mat, fingerprints_chunk, fp_means)
-        eta2_den = sum_coeff(fp_i_mat, fingerprints_chunk, fp_means_row_mat)
+        fingerprints_mean_row = numpy.mean(fingerprints_mean, axis=1)[:, numpy.newaxis]
+        fingerprints_mean_rep = numpy.repeat(fingerprints_mean_row, num_lower_dim, axis=1)
 
-        eta2_coef[i, i_chunk:] = 1 - eta2_num / eta2_den
+        # Compute eta square
+        eta2_numerator = sum_coeff(fingerprints_i_rep,
+                                   fingerprints_from_i,
+                                   fingerprints_mean)
 
-        progress_new = int(100 * i / num_voxels_in_chunk)
+        eta2_denominator = sum_coeff(fingerprints_i_rep,
+                                     fingerprints_from_i,
+                                     fingerprints_mean_rep)
 
-        if progress_new > progress_old:
-            print('\rComputing similarity maps... {0}%'.format(progress_new),
-                  end="", flush=True)
-            progress_old = progress_new
+        eta2_coef[i, chunk_i:] = 1 - eta2_numerator / eta2_denominator
 
     return eta2_coef
 
@@ -172,55 +293,23 @@ def haak_mapping(data, num_voxels_in_roi, roi_mask, manifold_learning='spectral'
 
     assert(manifold_learning in ['tSNE', 'spectral'])
 
-    # File names of intermediate results
+    # Filenames of intermediate results
     if out_path is not None:
+
         # Create folder and subfolders if they don't exist
         os.makedirs(out_path, exist_ok=True)
+
         # Instantiate filename variables
-        filename_data_s = out_path + os.sep + \
-                          'data_s.npy'
-        filename_data_v = out_path + os.sep + \
-                          'data_v.npy'
-        filename_fingerprints = out_path + os.sep + \
-                                'fingerprints.npy'
-        filename_eta2_coef = out_path + os.sep + \
-                             'eta2_coef.npy'
-        filename_embedding = out_path + os.sep + \
-                             'embedding_{0}.npy'.format(manifold_learning)
-        filename_connectopic_map = out_path + os.sep + \
-                                   'connectopic_map_{0}.npy'.format(manifold_learning)
+        filename_fingerprints = out_path + os.sep + 'fingerprints.npy'
+        filename_eta2_coef = out_path + os.sep + 'eta2_coef.npy'
+        filename_embedding = \
+            out_path + os.sep + 'embedding_{0}.npy'.format(manifold_learning)
+        filename_connectopic_map = \
+            out_path + os.sep + 'connectopic_map_{0}.npy'.format(manifold_learning)
 
-    num_cpu = multiprocessing.cpu_count()
-
-    ###
     #
-    # Get first t-1 components (where t is the number of time frames)
+    # Compute ROI voxels fingerprints
     #
-    ###
-
-    print("Dimensionality reduction...", end="", flush=True)
-
-    if out_path is not None and os.path.isfile(filename_data_v):
-        data_v = numpy.load(filename_data_v)
-        data_s = numpy.load(filename_data_s)
-    else:
-
-        data_u, data_s, data_v = numpy.linalg.svd(data, full_matrices=False)
-        del data_u
-
-        # Store data
-        if out_path is not None:
-            numpy.save(filename_data_s, data_s)
-            numpy.save(filename_data_v, data_v)
-
-    print("\rDimensionality reduction... Done!", flush=True)
-
-    ###
-    #
-    # Compute voxels fingerprints as Pearson correlation between ROI
-    # time-series and out-of-ROI reprojected time-series
-    #
-    ###
 
     print("Computing fingerprints...", end="", flush=True)
 
@@ -228,16 +317,17 @@ def haak_mapping(data, num_voxels_in_roi, roi_mask, manifold_learning='spectral'
         fingerprints = numpy.load(filename_fingerprints)
     else:
 
-        num_voxels_svd = data.shape[0] - 1
-        data_s_diag = numpy.diag(data_s[:num_voxels_svd])
-        data_reprojected = numpy.dot(data_s_diag,
-                                     data_v[:num_voxels_svd, :num_voxels_in_roi])  #:num_voxels_in_roi
-        fingerprints = data_reprojected.T
+        fingerprints = compute_fingerprints(data, num_voxels_in_roi)
 
         if out_path is not None:
             numpy.save(filename_fingerprints, fingerprints)
 
     print("\rComputing fingerprints... Done!", flush=True)
+
+    #
+    # Compute similarities between pair of voxels' fingerprints as
+    # eta square coefficients
+    #
 
     print("Computing similarity maps...", end="", flush=True)
 
@@ -245,46 +335,17 @@ def haak_mapping(data, num_voxels_in_roi, roi_mask, manifold_learning='spectral'
         eta2_coef = numpy.load(filename_eta2_coef)
     else:
 
-        ## Uncomment for computing similarities between ROI
-        ## and non-ROI voxels
-        #num_voxels_in_roi = data.shape[1]
-
-        # Distribute load equally among all CPUs
-        pool = multiprocessing.Pool(num_cpu)
-
-        # Approximation of the optimal fraction of the dataset to
-        # allocate to each CPU
-        frac_fingerprint = (numpy.arange(num_cpu+1)) * 2 / (num_cpu * (num_cpu+1))
-        idxs_fingerprint = numpy.cumsum(frac_fingerprint) * num_voxels_in_roi
-        idxs_pool = [numpy.arange(int(idxs_fingerprint[idx]),
-                                  int(idxs_fingerprint[idx+1]))
-                     for idx in range(len(idxs_fingerprint)-1)]
-
-        starmap_input = [(fingerprints, idx) for idx in idxs_pool]
-
-        # Run compute_similarity_map in parallel
-        eta2_chunks = pool.starmap(compute_similarity_map, starmap_input)
-
-        # Merge together results
-        eta2_coef = numpy.zeros((num_voxels_in_roi, num_voxels_in_roi))
-        for i_cpu in range(num_cpu):
-            for i_chunk in range(len(idxs_pool[i_cpu])):
-                i_eta = idxs_pool[i_cpu][i_chunk]
-                eta2_row = eta2_chunks[i_cpu][i_chunk, i_eta:]
-                eta2_coef[i_eta, i_eta:] = eta2_row
-                eta2_coef[i_eta:, i_eta] = eta2_row
+        eta2_coef = distribute_similarity_map(fingerprints)
 
         if out_path is not None:
             numpy.save(filename_eta2_coef, eta2_coef)
 
     print("\rComputing similarity maps... Done!", flush=True)
 
-    ###
     #
     # Learn the manifold for this data and reproject the similarity
     # graph on the two most significant connectopies
     #
-    ###
 
     print("Learning embedding...", end="", flush=True)
 
@@ -379,6 +440,7 @@ def haak_mapping(data, num_voxels_in_roi, roi_mask, manifold_learning='spectral'
     print("Spatial statistics... Done!", flush=True)
 
     return eta2_coef, embedding, connectopic_map
+
 
 def visualize_volume(fig, data, brain_mask, roi_mask, title, cmap, slice_indexes):
     """ Visualize 2-dimensional views of the brain
@@ -497,7 +559,7 @@ def _normalize_nifti(image_path, fwhm=6):
         """
 
         # Smooth
-        nifti_image = image.smooth_img(image_path, 6)
+        nifti_image = image.smooth_img(image_path, fwhm)
         nifti_data = nifti_image.get_data()
         nifti_data_shape = nifti_data.shape
 
