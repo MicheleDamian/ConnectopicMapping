@@ -1,0 +1,37 @@
+{
+
+  "subject": "100307",
+  "session": "REST1",
+  "scans": ["LR", "RL"],
+  "hemisphere": "LH",
+
+  "nifti_dir_path": "/Users/michele/Development/Workspaces/UpWork/Morgan_Hough/Resources/rfMRI/100307_REST1",
+
+  "atlas_name": "cort-maxprob-thr25-2mm",
+  "roi_name": "Precentral Gyrus",
+
+  "num_lower_dim": "haak",
+  "num_processes": "cpu",
+  "manifold_learning": "isomap",
+  "manifold_components": 1,
+  "out_path": "/Users/michele/Development/Workspaces/UpWork/Morgan_Hough/Results/connectopic_mapping/manifold_v2",
+  "verbose": 1,
+
+  "figures":
+  [
+    {
+      "axis_x": 18,
+      "axis_y": 65,
+      "axis_z": 50,
+      "legend_location": 2
+    },
+
+    {
+      "axis_x": 25,
+      "axis_y": 55,
+      "axis_z": 69,
+      "legend_location": 4
+    }
+  ]
+
+}
