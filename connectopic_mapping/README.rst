@@ -3,8 +3,8 @@ Connectopic Mapping
 
 :Author: Michele Damian
 :Contact: michele.damian@gmail.com
-:Date: 2016-07-06
-:Version: 0.1.0br1
+:Date: 2016-08-06
+:Version: 0.3.0br1
 
 This module contains the tools to extract a connectopic mapping of the brain
 from resting state fMRI data. The pipeline used is based on Haak et al. paper

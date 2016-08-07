@@ -1,5 +1,5 @@
 """Class and methods to implement Haak's pipeline."""
-
+from __future__ import print_function
 import multiprocessing
 import os
 import GPy
@@ -8,9 +8,12 @@ from scipy.sparse import csgraph
 from scipy.optimize import minimize
 from sklearn import manifold
 
+cimport numpy
+cimport cython
+
 __author__ = "Michele Damian"
 __email__ = "michele.damian@gmail.com"
-__version__ = "0.2.0br1"
+__version__ = "0.3.0br1"
 
 
 class Haak:
@@ -381,79 +384,83 @@ class Haak:
 
         return eta2_coef
 
-    def _compute_similarity_map(self, fingerprints, idx_chunk=None):
-        """Compute the eta2 coefficients from the voxels' fingerprints.
+    @cython.boundscheck(False)
+    @cython.cdivision(True)
+    def _compute_similarity_map(self, numpy.ndarray[numpy.float32_t, ndim=2] fingerprints, numpy.ndarray[long] idx_chunk):
+        """Compute the eta square coefficients from the voxels' fingerprints.
 
         The result is a symmetric square matrix where each element is a
         real value in the range 0.0 to 1.0 with 0 indicating the pair of
-        voxels is completely dissimilar and 1 equals.
+        voxels is completely dissimilar and 1 equal.
 
         Parameters
         ----------
         fingerprints : numpy.ndarray, shape (num_fingerprints, num_lower_dim)
-            The correlation between the voxels and the lower dimensional
+            The correlations between the voxels and the lower dimensional
             embedding.
 
-        idx_chunk : numpy.ndarray, shape (K, ), (default: None)
-            Indexes of the num_fingerprints voxels to consider when
-            computing the eta2 coefficients. If idx_chunk=None all
-            num_fingerprints are considered. This parameter can be used
-            to split the computation among several CPUs.
+        idx_chunk : numpy.ndarray, shape (K, )
+            Indexes of the num_fingerprints voxels to consider when computing
+            the eta square coefficients. This parameter can be used to split
+            the computation among several CPUs.
 
         Returns
         -------
-        eta2_coef : numpy.ndarray, shape (num_fingerprints, num_fingerprints)
-            The symmetric matrix containing the eta square coefficients
-            between pairs of voxels.
+        eta2_coef : numpy.ndarray, shape (K, num_fingerprints)
+            The symmetric matrix containing the eta square coefficients between
+            pairs of voxels where the voxel at row i has index idx_chunk[i] in
+            fingerprints.
 
         """
 
-        num_chunk = idx_chunk.shape[0]
-        num_fingerprints = fingerprints.shape[0]
-        num_lower_dim = fingerprints.shape[1]
+        cdef:
+            numpy.float64_t eta2_numerator, eta2_denominator
+            numpy.float64_t fingerprints_ij_mean, fingerprints_ijk_mean
+            numpy.float64_t fingerprints_i, fingerprints_j
+            int num_fingerprints = fingerprints.shape[0]
+            int num_lower_dim = fingerprints.shape[1]
+            int i, j, k, i_chunk
+            int progress, progress_old
+            int num_chunk = idx_chunk.shape[0]
+            numpy.ndarray[numpy.float32_t, ndim=2] eta2_coef = numpy.zeros((num_chunk, num_fingerprints), dtype=numpy.float32)
 
-        if idx_chunk is None:
-            idx_chunk = numpy.arange(0, num_fingerprints)
-
-        # Utility method to compute eta square
-        def sum_coeff(fingerprints_0, fingerprints_1, fingerprints_mean):
-            addend_0 = (fingerprints_0 - fingerprints_mean)**2
-            addend_1 = (fingerprints_1 - fingerprints_mean)**2
-            return numpy.sum(addend_0 + addend_1, axis=1)
-
-        # Allocate memory where to store eta square coefficients
-        eta2_coef = numpy.zeros((num_chunk, num_fingerprints))
+        progress_old = -1
 
         for i in range(num_chunk):
 
-            # Get fingerprint's index
-            chunk_i = idx_chunk[i]
+            i_chunk = idx_chunk[i]
 
-            # Fingerprints left to compute
-            num_chunk_i = num_fingerprints - chunk_i
+            for j in range(i_chunk, num_fingerprints):
 
-            # i-th fingerprint to compute
-            fingerprints_i = fingerprints[chunk_i, :][numpy.newaxis, :]
-            fingerprints_i_rep = numpy.repeat(fingerprints_i, num_chunk_i, axis=0)
+                fingerprints_ij_mean = 0.0
 
-            # Fingerprints pair to correlate with the i-th
-            fingerprints_from_i = fingerprints[chunk_i:, :]
+                for k in range(num_lower_dim):
+                    fingerprints_ij_mean += (fingerprints[i_chunk, k] + fingerprints[j, k]) / 2
 
-            fingerprints_mean = (fingerprints_i_rep + fingerprints_from_i) / 2
+                fingerprints_ij_mean /= num_lower_dim
 
-            fingerprints_mean_row = numpy.mean(fingerprints_mean, axis=1)[:, numpy.newaxis]
-            fingerprints_mean_rep = numpy.repeat(fingerprints_mean_row, num_lower_dim, axis=1)
+                eta2_numerator = 0.0
+                eta2_denominator = 0.0
 
-            # Compute eta square
-            eta2_numerator = sum_coeff(fingerprints_i_rep,
-                                       fingerprints_from_i,
-                                       fingerprints_mean)
+                for k in range(num_lower_dim):
+                    fingerprints_i = fingerprints[i_chunk, k]
+                    fingerprints_j = fingerprints[j, k]
 
-            eta2_denominator = sum_coeff(fingerprints_i_rep,
-                                         fingerprints_from_i,
-                                         fingerprints_mean_rep)
+                    fingerprints_ijk_mean = (fingerprints_i + fingerprints_j) / 2
 
-            eta2_coef[i, chunk_i:] = 1 - eta2_numerator / eta2_denominator
+                    eta2_numerator += (fingerprints_i - fingerprints_ijk_mean)**2 + \
+                                      (fingerprints_j - fingerprints_ijk_mean)**2
+
+                    eta2_denominator += (fingerprints_i - fingerprints_ij_mean)**2 + \
+                                        (fingerprints_j - fingerprints_ij_mean)**2
+
+                eta2_coef[i, j] = 1 - eta2_numerator / eta2_denominator
+
+            progress = (i * 100) / num_chunk
+
+            if self._verbose and progress > progress_old:
+                print("\rComputing similarity maps... {0}".format(progress), end="", flush=True)
+                progress_old = progress
 
         return eta2_coef
 

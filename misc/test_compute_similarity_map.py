@@ -1,8 +1,10 @@
-import cutils
-import numpy
-import multiprocessing
 import json
+import multiprocessing
+
+import numpy
 from scipy import optimize
+
+from misc import cutils
 
 with open('config.json') as config_file:
     config = json.load(config_file)

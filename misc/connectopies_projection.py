@@ -1,11 +1,12 @@
-import cutils
 import json
-import numpy
-import seaborn
 import multiprocessing
 import os
-from connectopic_mapping import utils
+
+import numpy
 from matplotlib import pyplot
+
+from connectopic_mapping import utils
+from misc import cutils
 
 with open('config.json') as config_file:
     config = json.load(config_file)

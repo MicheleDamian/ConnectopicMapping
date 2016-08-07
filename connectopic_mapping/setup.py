@@ -1,6 +1,9 @@
-from setuptools import setup
 from codecs import open
 from os import path
+from distutils.core import setup
+from distutils.extension import Extension
+from Cython.Distutils import build_ext
+import numpy
 
 here = path.abspath(path.dirname(__file__))
 
@@ -11,7 +14,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 setup(
     name='connectopic_mapping',
 
-    version='0.1.0br1',
+    version='0.3.0br1',
 
     description='Connectopic mapping',
     long_description=long_description,
@@ -35,5 +38,9 @@ setup(
     #packages=find_packages(exclude=['contrib', 'docs', 'tests']),
 
     py_modules=["connectopic_mapping"],
+
+    cmdclass={'build_ext': build_ext},
+
+    ext_modules=[Extension("Haak", ["Haak.pyx"], include_dirs=[numpy.get_include()])]
 
 )
