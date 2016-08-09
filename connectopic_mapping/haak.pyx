@@ -355,12 +355,13 @@ class Haak:
 
         ratio_loss = lambda ratios: sum([(ratios[i-1]*sum(ratios[i-1:]) - ratios[i]*sum(ratios[i:]))**2 for i in range(1, len(ratios))]) + (sum(ratios) - 1)**2
 
-        res_optimize = minimize(ratio_loss, fingerprints_ratio[1:], method='nelder-mead', options={'xtol': 1e-8, 'disp': self._verbose})
+        res_optimize = minimize(ratio_loss, fingerprints_ratio[1:], method='nelder-mead', options={'xtol': 1e-8})
 
         if all(res_optimize.x > 0) and all(res_optimize.x < 1):
             fingerprints_ratio[1:] = res_optimize.x
 
         fingerprints_idx = (numpy.cumsum(fingerprints_ratio) * num_fingerprints).astype(int)
+        fingerprints_idx[-1] = num_fingerprints
 
         pool_idx = [numpy.arange(fingerprints_idx[i], fingerprints_idx[i+1])
                     for i in range(len(fingerprints_idx)-1)]
@@ -379,6 +380,10 @@ class Haak:
                 i_eta = pool_idx[i_cpu][i_chunk]
 
                 eta2_row = eta2_chunks[i_cpu][i_chunk, i_eta:]
+
+                if i_cpu == self._num_processes-1 and i_eta >= num_fingerprints - 10:
+                    print(i_cpu, i_eta, eta2_row)
+
                 eta2_coef[i_eta, i_eta:] = eta2_row
                 eta2_coef[i_eta:, i_eta] = eta2_row
 
@@ -549,4 +554,3 @@ class Haak:
                                                         eigen_solver=None)
 
         return manifold_class.fit_transform(distances)
-

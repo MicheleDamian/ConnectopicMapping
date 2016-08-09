@@ -41,6 +41,6 @@ setup(
 
     cmdclass={'build_ext': build_ext},
 
-    ext_modules=[Extension("Haak", ["Haak.pyx"], include_dirs=[numpy.get_include()])]
+    ext_modules=[Extension("haak", ["haak.pyx"], include_dirs=[numpy.get_include()])]
 
 )
