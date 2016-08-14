@@ -1,0 +1,302 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Run &mdash; Connectopic Mapping 0.3.0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="Connectopic Mapping 0.3.0 documentation" href="index.html"/>
+        <link rel="next" title="Notes" href="notes.html"/>
+        <link rel="prev" title="Installation" href="install.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Connectopic Mapping
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.3
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Run</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#haak-pipeline">Haak pipeline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#parameters">Parameters</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="notes.html">Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Connectopic Mapping API</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">Connectopic Mapping</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Run</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/run.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="run">
+<h1>Run<a class="headerlink" href="#run" title="Permalink to this headline">¶</a></h1>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Author:</th><td class="field-body">Michele Damian &lt;<a class="reference external" href="mailto:michele&#46;damian&#37;&#52;&#48;gmail&#46;com">michele<span>&#46;</span>damian<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Version:</th><td class="field-body">0.3.0</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Date:</th><td class="field-body">2016/08/13</td>
+</tr>
+</tbody>
+</table>
+<p>To run the pipeline simply create an object of the class <a class="reference internal" href="api.html#connectopic_mapping.Haak" title="connectopic_mapping.Haak"><code class="xref py py-class docutils literal"><span class="pre">connectopic_mapping.Haak</span></code></a> and then call <code class="xref py py-meth docutils literal"><span class="pre">connectopic_mapping.Haak.fit_transorm()</span></code> to extract the connectopies.</p>
+<div class="section" id="haak-pipeline">
+<h2>Haak pipeline<a class="headerlink" href="#haak-pipeline" title="Permalink to this headline">¶</a></h2>
+<p>The script <cite>run.py</cite> implements the pipeline developed in Haak and colleagues paper &#8220;Connectopic mapping with resting-state fMRI&#8221;; it provides an example of how to compute and visualize the connectopies from a resting state fMRI image provided by the <a class="reference external" href="https://www.humanconnectome.org">Human Connectome Project</a>. As such, it expects as input two 15-minutes, 0.72-seconds temporal and 2mm spatial resolution, denoised and registered volume-based scans preprocessed with the HCP functional and ICA-FIX pipelines. The parameters of the script can be changed by editing the configuration file <cite>config.json</cite>. The following section contains a definition of these parameters.</p>
+<p>It is possible to test the pipeline against the results provided in the Notes page. To do it run the pipeline for two sessions of the same subject. Then compute the normalized root mean squared error as follow:</p>
+<div class="highlight-python3"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="k">import</span> <span class="n">mean_squared_error</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="k">import</span> <span class="n">sqrt</span>
+
+<span class="n">connectopies_session_1</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;filename_connectopic_map_session_1&#39;</span><span class="p">)</span>
+<span class="n">connectopies_session_2</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;filename_connectopic_map_session_2&#39;</span><span class="p">)</span>
+
+<span class="n">rmse</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">mean_squared_error</span><span class="p">(</span><span class="n">connectopic_map_session_1</span><span class="p">,</span> <span class="n">connectopic_map_session_2</span><span class="p">))</span>
+<span class="n">nrmse</span> <span class="o">=</span> <span class="n">rmse</span> <span class="o">/</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">connectopic_map_session_1</span><span class="p">)</span> <span class="o">-</span> <span class="n">numpy</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">connectopic_map_session_2</span><span class="p">))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;nRMSE = </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">nrmse</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt>subject</dt>
+<dd>Number of the subject as in the filename of the Human Connectome Project&#8217;s Nifti image.</dd>
+<dt>session</dt>
+<dd>Name of the session as in the filename of the Human Connectome Project&#8217;s Nifti image. Usually &#8220;REST1&#8221; or &#8220;REST2&#8221;.</dd>
+<dt>scans</dt>
+<dd>List of names of the scans as in the Human Connectome Project&#8217;s Nifti images. This script concatenates two scans named &#8220;LR&#8221; and &#8220;RL&#8221;.</dd>
+<dt>hemisphere</dt>
+<dd>Name of the hemisphere as in the Human Connectome Project&#8217;s Nifti image. Usually &#8220;RH&#8221; or &#8220;LH&#8221;.</dd>
+<dt>nifti_dir_path</dt>
+<dd>Path where the Human Connectome Project&#8217;s Nifti image are stored.</dd>
+<dt>atlas_name</dt>
+<dd>Name of the labeled atlas to use from the Harvard-Oxford dataset. Refer to <a class="reference internal" href="api.html#connectopic_mapping.utils.load_masks" title="connectopic_mapping.utils.load_masks"><code class="xref py py-meth docutils literal"><span class="pre">connectopic_mapping.utils.load_masks()</span></code></a></dd>
+<dt>roi_name</dt>
+<dd>Name of the ROI to use as named in the atlas. Refer to <a class="reference internal" href="api.html#connectopic_mapping.utils.load_masks" title="connectopic_mapping.utils.load_masks"><code class="xref py py-meth docutils literal"><span class="pre">connectopic_mapping.utils.load_masks()</span></code></a>.</dd>
+<dt>num_lower_dim</dt>
+<dd>See parameter <code class="docutils literal"><span class="pre">num_lower_dim</span></code> in <a class="reference internal" href="api.html#connectopic_mapping.Haak" title="connectopic_mapping.Haak"><code class="xref py py-meth docutils literal"><span class="pre">connectopic_mapping.Haak()</span></code></a>.</dd>
+<dt>num_processes</dt>
+<dd>See parameter <code class="docutils literal"><span class="pre">num_processes</span></code> in <a class="reference internal" href="api.html#connectopic_mapping.Haak" title="connectopic_mapping.Haak"><code class="xref py py-meth docutils literal"><span class="pre">connectopic_mapping.Haak()</span></code></a>.</dd>
+<dt>manifold_learning</dt>
+<dd>See parameter <code class="docutils literal"><span class="pre">manifold_learning</span></code> in <a class="reference internal" href="api.html#connectopic_mapping.Haak" title="connectopic_mapping.Haak"><code class="xref py py-meth docutils literal"><span class="pre">connectopic_mapping.Haak()</span></code></a>.</dd>
+<dt>manifold_components</dt>
+<dd>See parameter <code class="docutils literal"><span class="pre">manifold_components</span></code> in <a class="reference internal" href="api.html#connectopic_mapping.Haak" title="connectopic_mapping.Haak"><code class="xref py py-meth docutils literal"><span class="pre">connectopic_mapping.Haak()</span></code></a>.</dd>
+<dt>out_path</dt>
+<dd>See parameter <code class="docutils literal"><span class="pre">out_path</span></code> in <a class="reference internal" href="api.html#connectopic_mapping.Haak" title="connectopic_mapping.Haak"><code class="xref py py-meth docutils literal"><span class="pre">connectopic_mapping.Haak()</span></code></a>.</dd>
+<dt>verbose</dt>
+<dd>See parameter <code class="docutils literal"><span class="pre">verbose</span></code> in <a class="reference internal" href="api.html#connectopic_mapping.Haak" title="connectopic_mapping.Haak"><code class="xref py py-meth docutils literal"><span class="pre">connectopic_mapping.Haak()</span></code></a>.</dd>
+<dt>figures</dt>
+<dd><blockquote class="first">
+<div>Add a <cite>json</cite> list of the following parameters for each slice of the brain to be visualized:</div></blockquote>
+<ul>
+<li><dl class="first docutils">
+<dt>axis_x</dt>
+<dd><p class="first last">Integer coordinate of the plane orthogonal to the X axis to visualize;</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>axis_y</dt>
+<dd><p class="first last">Integer coordinate of the plane orthogonal to the Y axis to visualize;</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>axis_z</dt>
+<dd><p class="first last">Integer coordinate of the plane orthogonal to the Z axis to visualize;</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>legend_location</dt>
+<dd><p class="first last">Location of the legend in the graph. 1 := North-East, 2 := North-West, 3 := South-West and 4 := South-East. If None the legend is not visualized.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p class="last">See <a class="reference internal" href="api.html#connectopic_mapping.utils.visualize_volume" title="connectopic_mapping.utils.visualize_volume"><code class="xref py py-meth docutils literal"><span class="pre">connectopic_mapping.utils.visualize_volume()</span></code></a>.</p>
+</dd>
+</dl>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="notes.html" class="btn btn-neutral float-right" title="Notes" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="install.html" class="btn btn-neutral" title="Installation" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Michele Damian.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.3.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

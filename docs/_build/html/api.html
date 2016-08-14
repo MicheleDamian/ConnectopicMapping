@@ -1,0 +1,667 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Connectopic Mapping API &mdash; Connectopic Mapping 0.3.0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="Connectopic Mapping 0.3.0 documentation" href="index.html"/>
+        <link rel="prev" title="Notes" href="notes.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Connectopic Mapping
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.3
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="run.html">Run</a></li>
+<li class="toctree-l1"><a class="reference internal" href="notes.html">Notes</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Connectopic Mapping API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-connectopic_mapping">connectopic_mapping.Haak</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-connectopic_mapping.utils">connectopic_mapping.utils</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">Connectopic Mapping</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Connectopic Mapping API</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/api.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="connectopic-mapping-api">
+<h1>Connectopic Mapping API<a class="headerlink" href="#connectopic-mapping-api" title="Permalink to this headline">¶</a></h1>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Author:</th><td class="field-body">Michele Damian &lt;<a class="reference external" href="mailto:michele&#46;damian&#37;&#52;&#48;gmail&#46;com">michele<span>&#46;</span>damian<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Version:</th><td class="field-body">0.3.0</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Date:</th><td class="field-body">2016/08/13</td>
+</tr>
+</tbody>
+</table>
+<div class="section" id="module-connectopic_mapping">
+<span id="connectopic-mapping-haak"></span><h2>connectopic_mapping.Haak<a class="headerlink" href="#module-connectopic_mapping" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="connectopic_mapping.Haak">
+<em class="property">class </em><code class="descclassname">connectopic_mapping.</code><code class="descname">Haak</code><a class="headerlink" href="#connectopic_mapping.Haak" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract grey matter connectopies from resting state fMRI data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>num_lower_dim</strong> : str or int, (options: &#8216;haak&#8217;, &#8216;full&#8217;), (default: &#8216;haak&#8217;)</p>
+<blockquote>
+<div><p>Number of dimensions of the lower dimensional space used
+to compute the fingerprints.</p>
+<ul class="simple">
+<li>If <cite>num_lower_dim</cite> is a natural number, that specifies the
+dimensions.</li>
+<li>If <cite>num_lower_dim</cite> == &#8216;haak&#8217;, the length of the time-series - 1
+is used <a class="reference internal" href="#r1" id="id1">[R1]</a>.</li>
+<li>If <cite>num_lower_dim</cite> == &#8216;full&#8217;, all dimensions are used and the
+resulting fingerprints are the correlation of a voxel in the
+ROI with every other voxel.</li>
+</ul>
+</div></blockquote>
+<p><strong>num_processes</strong> : str or int, (options: &#8216;cpu&#8217;), (default: &#8216;cpu&#8217;)</p>
+<blockquote>
+<div><p>Number of processes to create to compute the fingerprints.</p>
+<ul class="simple">
+<li>If <cite>num_processes</cite> is a natural number, that specifies among how
+many processes to split the execution.</li>
+<li>If <cite>num_processes</cite> == &#8216;cpu&#8217;, the method balance the execution among
+all available CPUs.</li>
+</ul>
+</div></blockquote>
+<p><strong>manifold_learning</strong> : str, (options: &#8216;tSNE&#8217;, &#8216;spectral&#8217;, &#8216;isomap&#8217;), (default: &#8216;spectral&#8217;)</p>
+<blockquote>
+<div><p>Manifold learning algorithm to use to find a lower dimensional
+representation of the voxels correlation map. The options are
+tSNE, spectral embedding or isomap. Refer to sklearn.manifold
+for further documentation.</p>
+</div></blockquote>
+<p><strong>manifold_components</strong> : int, (default: 1)</p>
+<blockquote>
+<div><p>Number of components of the lower dimensional manifold.</p>
+</div></blockquote>
+<p><strong>out_path</strong> : str, (default: &#8216;.&#8217;)</p>
+<blockquote>
+<div><p>Path of the folder where to save the intermediate results. If it
+doesn&#8217;t exist the method tries to create one. By default the
+results are saved in the same folder where the script is located.
+They are not recomputed if they are are already present;
+unless <cite>out_path</cite> == None, then no intermediate result is saved
+and everything is recomputed.</p>
+</div></blockquote>
+<p><strong>verbose</strong> : int, (default: 0)</p>
+<blockquote class="last">
+<div><p>Verbosity level.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>This implementation differs from <a class="reference internal" href="#r1" id="id2">[R1]</a> in the way it computes the
+fingerprints from the voxels. <a class="reference internal" href="#r1" id="id3">[R1]</a> separates the in-ROI and
+out-ROI voxels, reduces out-ROI dimensionality by singular value
+decomposition and computes the fingerprints as the correlations
+between in-ROI voxels and the reduced out-ROI voxels.
+This implementation keeps the in-ROI and out-ROI voxels together,
+it reduces their dimensionality by singular value decomposition and
+use the right eigenvectors of the in-ROI voxels as fingerprints.</p>
+<p>In case spectral embedding is used the pipeline creates a graph with
+<cite>num_fingerprints</cite> vertexes and edges&#8217; weights described by the
+<cite>eta2_coef</cite> matrix. Then, from the set of all the edges, it keeps
+the smallest subset with the smallest weights such that each
+pair of vertex is still connected (through any number of edges).
+Spectral embedding learns a manifold of this graph.</p>
+<p class="rubric">References</p>
+<table class="docutils citation" frame="void" id="r1" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[R1]</td><td><em>(<a class="fn-backref" href="#id1">1</a>, <a class="fn-backref" href="#id2">2</a>, <a class="fn-backref" href="#id3">3</a>, <a class="fn-backref" href="#id4">4</a>)</em> Haak et al., &#8220;Connectopic mapping with resting-state fMRI&#8221;, 2016</td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="r2" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id5">[R2]</a></td><td>Cohen et al., &#8220;Defining functional areas in individual human brains using resting functional connectivity MRI&#8221;, 2008</td></tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#connectopic_mapping.Haak.fit_transform" title="connectopic_mapping.Haak.fit_transform"><code class="xref py py-obj docutils literal"><span class="pre">fit_transform</span></code></a></td>
+<td>Run the pipeline to extract connectopies from time-series.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="connectopic_mapping.Haak.fit_transform">
+<code class="descname">fit_transform</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#connectopic_mapping.Haak.fit_transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run the pipeline to extract connectopies from time-series.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>data</strong> : numpy.ndarray, shape (num_timepoints, num_voxels)</p>
+<blockquote>
+<div><p>The voxels&#8217; time-series from the resting state fMRI acquired.
+The first N voxels (with N equal to the number of voxels set
+to True in <cite>roi_mask</cite>) along the <cite>num_voxels</cite> axes must
+belong to the region of interest where the mapping is computed.</p>
+</div></blockquote>
+<p><strong>roi_mask</strong> : numpy.ndarray, shape (x_dim, y_dim, z_dim)</p>
+<blockquote>
+<div><p>Boolean 3-dimensional numpy array with the same dimensions of a
+single frame of the nifti image provided as input. Voxels
+marked as True are part of the same region of interest (ROI).</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>eta2_coef</strong> : numpy.ndarray, shape (num_fingerprints, num_fingerprints)</p>
+<blockquote>
+<div><p>Symmetric matrix containing the eta square coefficients
+between pairs of voxels.</p>
+</div></blockquote>
+<p><strong>embedding</strong> : numpy.ndarray, shape (num_fingerprints, manifold_components)</p>
+<blockquote>
+<div><p>Lower dimensional manifold.</p>
+</div></blockquote>
+<p><strong>connectopic_map</strong> : numpy.ndarray, (n_predictions, n_dim)</p>
+<blockquote>
+<div><p>Posterior mean from the Gaussian process for each ROI voxel.</p>
+</div></blockquote>
+<p><strong>connectopic_var</strong> : numpy.ndarray, (n_predictions, )</p>
+<blockquote class="last">
+<div><p>Variance from the Gaussian process for each ROI voxel.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-connectopic_mapping.utils">
+<span id="connectopic-mapping-utils"></span><h2>connectopic_mapping.utils<a class="headerlink" href="#module-connectopic_mapping.utils" title="Permalink to this headline">¶</a></h2>
+<p>Utility methods to manipulate and visualize voxels.</p>
+<dl class="function">
+<dt id="connectopic_mapping.utils.concatenate_data">
+<code class="descclassname">connectopic_mapping.utils.</code><code class="descname">concatenate_data</code><span class="sig-paren">(</span><em>brain_mask</em>, <em>roi_mask</em>, <em>data_0</em>, <em>data_xyz_0</em>, <em>data_1</em>, <em>data_xyz_1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/connectopic_mapping/utils.html#concatenate_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#connectopic_mapping.utils.concatenate_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Concatenate data.</p>
+<p>Concatenate <cite>data_0</cite> and <cite>data_1</cite> along their first dimension such that
+the first part of the result represents ROI voxels and the second part
+represents outside of ROI voxels, as defined by <cite>brain_mask</cite> and <cite>roi_mask</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>brain_mask</strong> : numpy.ndarray, shape (x_dim, y_dim, z_dim)</p>
+<blockquote>
+<div><p>A 3-dimensional boolean matrix where each cell represent a
+voxel and is True if it belongs to the brain, False otherwise.</p>
+</div></blockquote>
+<p><strong>roi_mask</strong> : numpy.ndarray, shape (x_dim, y_dim, z_dim)</p>
+<blockquote>
+<div><p>A 3-dimensional boolean matrix of the same size of <cite>brain_mask</cite>
+where each cell is True if the voxel belongs to the region of
+interest, False otherwise.</p>
+</div></blockquote>
+<p><strong>data_0, data_1</strong> : numpy.ndarray, shape (num_timepoints, num_voxels)</p>
+<blockquote>
+<div><p>Voxels&#8217; time-series inside the ROI.</p>
+</div></blockquote>
+<p><strong>data_xyz_0, data_xyz_1</strong> : tuple, shape (3, num_voxels)</p>
+<blockquote>
+<div><p>X,Y,Z-coordinates of <cite>data_0</cite>/<cite>data_1</cite>. Each element of the triplet
+is an array-like list of voxels&#8217; coordinates along an axis, stored
+in the same order of the voxels&#8217; values in <cite>data_0</cite>/<cite>data_1</cite>.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>brain_mask</strong> : numpy.ndarray, shape (x_dim, y_dim, z_dim)</p>
+<blockquote>
+<div><p>As the homonymous input parameter, but updated such that just the
+voxels present in <cite>data_0</cite> and <cite>data_1</cite> are set to True.</p>
+</div></blockquote>
+<p><strong>roi_mask</strong> : numpy.ndarray, shape (x_dim, y_dim, z_dim)</p>
+<blockquote>
+<div><p>As the homonymous input parameter, but updated such that just the
+voxels present in <cite>data_0</cite> and <cite>data_1</cite> are set to True.</p>
+</div></blockquote>
+<p><strong>data</strong> : numpy.ndarray, shape (num_timepoints, num_voxels)</p>
+<blockquote class="last">
+<div><p>Input data concatenated along the num_timepoints axe such that
+the first <code class="docutils literal"><span class="pre">numpy.sum(roi_mask)</span></code> of <cite>num_voxels</cite> are voxels inside
+the region of interest, while the other voxels are outside.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<p>Concatenate two scans:</p>
+<div class="highlight-python3"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">brain_mask</span><span class="p">,</span> <span class="n">roi_mask</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">load_masks</span><span class="p">(</span><span class="s1">&#39;cort-maxprob-thr25-2mm&#39;</span><span class="p">,</span> <span class="s1">&#39;Precentral Gyrus&#39;</span><span class="p">,</span> <span class="s1">&#39;both&#39;</span><span class="p">)</span> <span class="c1"># Load masks</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data_info_0</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">normalize_nifti_image</span><span class="p">(</span><span class="n">image_path_0</span><span class="p">)</span> <span class="c1"># Load scan 0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data_info_1</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">normalize_nifti_image</span><span class="p">(</span><span class="n">image_path_1</span><span class="p">)</span> <span class="c1"># Load scan 1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">brain_mask</span><span class="p">,</span> <span class="n">roi_mask</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">concatenate_data</span><span class="p">(</span><span class="n">brain_mask</span><span class="p">,</span> <span class="n">roi_mask</span><span class="p">,</span> <span class="o">*</span><span class="n">data_info_0</span><span class="p">,</span> <span class="o">*</span><span class="n">data_info_1</span><span class="p">)</span> <span class="c1"># Concatenate scans</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="connectopic_mapping.utils.load_masks">
+<code class="descclassname">connectopic_mapping.utils.</code><code class="descname">load_masks</code><span class="sig-paren">(</span><em>dataset</em>, <em>roi_label</em>, <em>hemisphere</em>, <em>remove_white_matter=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/connectopic_mapping/utils.html#load_masks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#connectopic_mapping.utils.load_masks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load brain and region of interest (ROI) masks.</p>
+<p>Construct brain and ROI masks from a labeled Harvard-Oxford&#8217;s <cite>dataset</cite>
+(e.g. &#8216;cort-maxprob-thr25-2mm&#8217;).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>dataset</strong> : string</p>
+<blockquote>
+<div><p>Name of the labeled dataset from the Harvard-Oxford&#8217;s atlas
+from where to extract the region of interest. The voxels must
+have a resolution of 2mm.</p>
+</div></blockquote>
+<p><strong>roi_label</strong> : string</p>
+<blockquote>
+<div><p>Name of the label from the dataset corresponding to the region
+of interest.</p>
+</div></blockquote>
+<p><strong>hemisphere</strong> : string, (options: &#8216;LH&#8217;, &#8216;RH&#8217;, &#8216;both&#8217;)</p>
+<blockquote>
+<div><p>Hemisphere on which the region of interest is located
+(left &#8216;LH&#8217;, right &#8216;RH&#8217; or &#8216;both&#8217;)</p>
+</div></blockquote>
+<p><strong>remove_white_matter</strong> : bool, (default: True)</p>
+<blockquote>
+<div><p>Remove white matter voxels from masks.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>brain_mask</strong> : numpy.ndarray, shape (x_dim, y_dim, z_dim)</p>
+<blockquote>
+<div><p>Boolean matrix where each cell is True if the voxel is part
+of the brain, False otherwise.</p>
+</div></blockquote>
+<p><strong>roi_mask</strong> : numpy.ndarray, shape (x_dim, y_dim, z_dim)</p>
+<blockquote class="last">
+<div><p>Boolean matrix where each cell is True if the voxel is part
+of the region of interest, False otherwise.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<p>This is the Harvard-Oxford dataset:</p>
+<div class="highlight-python3"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span><span class="o">,</span> <span class="nn">nilearn</span><span class="o">,</span> <span class="nn">nibabel</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cortex_dataset</span> <span class="o">=</span> <span class="n">nilearn</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">fetch_atlas_harvard_oxford</span><span class="p">(</span><span class="s1">&#39;cort-maxprob-thr25-2mm&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cortex_labels</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cortex_dataset</span><span class="o">.</span><span class="n">labels</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="s1">&#39;Precentral Gyrus&#39;</span> <span class="ow">in</span> <span class="n">cortex_dataset</span><span class="o">.</span><span class="n">labels</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cortex_data</span> <span class="o">=</span> <span class="n">nibabel</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">cortex_dataset</span><span class="o">.</span><span class="n">maps</span><span class="p">)</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cortex_data</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">(91, 109, 91)</span>
+</pre></div>
+</div>
+<p>This is how to load the masks:</p>
+<div class="highlight-python3"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">brain_mask</span><span class="p">,</span> <span class="n">roi_mask</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">load_masks</span><span class="p">(</span><span class="s1">&#39;cort-maxprob-thr25-2mm&#39;</span><span class="p">,</span> <span class="s1">&#39;Precentral Gyrus&#39;</span><span class="p">,</span> <span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">brain_mask</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">(91, 109, 91)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">roi_mask</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">(91, 109, 91)</span>
+</pre></div>
+</div>
+<p>And these are the definitions of the masks
+(with <cite>remove_white_matter</cite> == False):</p>
+<div class="highlight-python3"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">idx_background_label</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">cortex_labels</span> <span class="o">==</span> <span class="s1">&#39;Background&#39;</span><span class="p">))[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">numpy</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">brain_mask</span> <span class="o">==</span> <span class="p">(</span><span class="n">cortex_data</span> <span class="o">!=</span> <span class="n">idx_background_label</span><span class="p">))</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">idx_pregyrus_label</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">cortex_labels</span> <span class="o">==</span> <span class="s1">&#39;Precentral Gyrus&#39;</span><span class="p">))[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">numpy</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">roi_mask</span> <span class="o">==</span> <span class="p">(</span><span class="n">cortex_data</span> <span class="o">==</span> <span class="n">idx_pregyrus_label</span><span class="p">))</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="connectopic_mapping.utils.normalize_nifti_image">
+<code class="descclassname">connectopic_mapping.utils.</code><code class="descname">normalize_nifti_image</code><span class="sig-paren">(</span><em>image_path</em>, <em>fwhm=6</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/connectopic_mapping/utils.html#normalize_nifti_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#connectopic_mapping.utils.normalize_nifti_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Normalize a 4D Nifti image.</p>
+<p>Apply a spatial smooth of dimension <cite>fwhm</cite> on a 4D nifti image
+located at <cite>image_path</cite> and normalize it along the temporal axis.
+The normalization step subtracts and divides the voxels&#8217; values
+by their means. The method returns just the active voxels and
+their XYZ-coordinates to reduce memory usage.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>image_path</strong> : string</p>
+<blockquote>
+<div><p>Path of the 4D Nifti image.</p>
+</div></blockquote>
+<p><strong>fwhm</strong> : float, (default: 6)</p>
+<blockquote>
+<div><p>Full width half maximum window dimension used to smooth the
+image. The same value will be used for all 3 spatial dimensions.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>nifti_data</strong> : numpy.ndarray, shape (num_timepoints, num_voxels)</p>
+<blockquote>
+<div><p>Voxels&#8217; values normalized that were active at least at one
+timepoint during the scan.</p>
+</div></blockquote>
+<p><strong>idx_active</strong> : tuple, shape (3)</p>
+<blockquote class="last">
+<div><p>X,Y,Z-coordinates of the 3D brain where the active voxels
+are located.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="connectopic_mapping.utils.save_nifti">
+<code class="descclassname">connectopic_mapping.utils.</code><code class="descname">save_nifti</code><span class="sig-paren">(</span><em>file_path, data, mask, affine=None, zooms=[2, 2, 2]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/connectopic_mapping/utils.html#save_nifti"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#connectopic_mapping.utils.save_nifti" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save a nifti image.</p>
+<p>Save the voxels that are set True in <cite>mask</cite> and which values are contained
+in <cite>data</cite> in a 3D nifti image.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>file_path</strong> : str</p>
+<blockquote>
+<div><p>File path of the nifti image.</p>
+</div></blockquote>
+<p><strong>data</strong> : numpy.ndarray, shape (num_voxels, )</p>
+<blockquote>
+<div><p>Values of the voxels. The order of the voxels must be the same as
+their coordinates in <cite>numpy.where(mask)</cite>.</p>
+</div></blockquote>
+<p><strong>mask</strong> : numpy.ndarray, shape (x_dim, y_dim, z_dim)</p>
+<blockquote>
+<div><p>3-dimensional boolean numpy array representing brain voxels, where
+an element is set to True if and only if it is present in data.</p>
+</div></blockquote>
+<p><strong>affine</strong> : numpy.ndarray, shape (4, 4), (default=None)</p>
+<blockquote>
+<div><p>Nifti affine matrix.</p>
+</div></blockquote>
+<p><strong>zooms</strong> : array_like, shape(3, ), (default: [2,2,2])</p>
+<blockquote class="last">
+<div><p>Nifti zooms in millimeters.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="connectopic_mapping.utils.visualize_volume">
+<code class="descclassname">connectopic_mapping.utils.</code><code class="descname">visualize_volume</code><span class="sig-paren">(</span><em>data</em>, <em>brain_mask</em>, <em>roi_mask</em>, <em>slice_indexes</em>, <em>low_percentile=10</em>, <em>high_percentile=90</em>, <em>num_fig=0</em>, <em>title='Projection'</em>, <em>margin=1</em>, <em>legend_location=1</em>, <em>cmap='gist_rainbow'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/connectopic_mapping/utils.html#visualize_volume"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#connectopic_mapping.utils.visualize_volume" title="Permalink to this definition">¶</a></dt>
+<dd><p>Visualize the projections of the brain onto the XY, XZ and YZ planes.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>data</strong> : numpy.ndarray, shape (num_voxels, )</p>
+<blockquote>
+<div><p>1-dimensional data containing the voxels&#8217; values inside the ROI
+as defined by <cite>roi_mask</cite>.</p>
+</div></blockquote>
+<p><strong>brain_mask</strong> : numpy.ndarray, shape (x_dim, y_dim, z_dim)</p>
+<blockquote>
+<div><p>Boolean 3-dimensional numpy ndarray where voxels marked as True
+are part of the brain.</p>
+</div></blockquote>
+<p><strong>roi_mask</strong> : numpy.ndarray, shape (x_dim, y_dim, z_dim)</p>
+<blockquote>
+<div><p>Boolean 3-dimensional numpy ndarray where voxels marked as True
+are part of the same region of interest.</p>
+</div></blockquote>
+<p><strong>low_percentile</strong> : int, (default: 10)</p>
+<blockquote>
+<div><p>Lower percentile at which to start normalizing <cite>data</cite>. Lower values
+are encoded as <cite>low_percentile</cite>. Consider increasing (decreasing)
+it if the distribution of <cite>data</cite> has a long (short) left tail.</p>
+</div></blockquote>
+<p><strong>high_percentile</strong> : int, (default: 90)</p>
+<blockquote>
+<div><p>Higher percentile at which to stop normalizing <cite>data</cite>. Higher values
+are encoded as <cite>high_percentile</cite>. Consider decreasing (increasing)
+it if the distribution of <cite>data</cite> has a long (short) left tail.</p>
+</div></blockquote>
+<p><strong>slice_indexes</strong> : numpy.ndarray, shape (3, )</p>
+<blockquote>
+<div><p>List of int representing the X, Y and Z indexes where to cut the
+YZ, XZ and XY planes respectively.</p>
+</div></blockquote>
+<p><strong>num_fig</strong> : int, (default: 0)</p>
+<blockquote>
+<div><p>Number of the figure where to plot the graphs.</p>
+</div></blockquote>
+<p><strong>title</strong> : str, (default: &#8220;Projection&#8221;)</p>
+<blockquote>
+<div><p>Title for the three graphs to visualize. It is followed by the
+plane the graph corresponds to and the coordinates of the plane.</p>
+</div></blockquote>
+<p><strong>margin</strong> : int, (default: 1)</p>
+<blockquote>
+<div><p>Number of voxels between the ROI and the axes in the visualization.</p>
+</div></blockquote>
+<p><strong>legend_location</strong> : int, (default: 1)</p>
+<blockquote>
+<div><p>Location of the legend in the graph. 1 := North-East, 2 :=
+North-West, 3 := South-West and 4 := South-East. If None the
+legend is not visualized.</p>
+</div></blockquote>
+<p><strong>cmap</strong> : str, (default: &#8216;gist_rainbow&#8217;)</p>
+<blockquote class="last">
+<div><p>String that identifies a matplotlib.colors.Colormap instance.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-python3"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">slice_indexes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">18</span><span class="p">,</span> <span class="mi">65</span><span class="p">,</span> <span class="mi">50</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">visualize_volume</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">brain_mask</span><span class="p">,</span> <span class="n">roi_mask</span><span class="p">,</span> <span class="n">slice_indexes</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="notes.html" class="btn btn-neutral" title="Notes" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Michele Damian.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.3.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

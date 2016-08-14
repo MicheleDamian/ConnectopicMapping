@@ -1,0 +1,48 @@
+Installation
+============
+
+:Author: Michele Damian <michele.damian@gmail.com>
+:Version: 0.3.0
+:Date: 2016/08/13
+
+Dependencies
+------------
+
+Connectoptic mapping requires:
+
+- `Python <http://www.python.org/>`_ (>= 3.5.1)
+- `Cython <http://cython.org/>`_ (>= 0.24.1)
+- `Numpy <http://www.numpy.org/>`_ (>= 1.6.1)
+- `Scipy <http://www.scipy.org/>`_ (>= 0.16)
+- `Matplotlib <http://www.matplotlib.org/>`_ (>= 1.5.1)
+- `Scikit-learn <http://www.scikit-learn.org//>`_ (>= 0.17.1)
+- `Nibabel <http://www.nipy.org/nibabel/>`_ (>= 2.2)
+- `Nilearn <http://nilearn.github.io/>`_ (>= 0.2.4)
+- `GPy <https://github.com/SheffieldML/GPy/>`_ (>= 1.0.7)
+
+If these packages are not present in the system they will be installed by pip during the installation process.
+
+Even if it is recommended to install Python 3.5, it is possible that
+Python 3.1, 3.2, 3.3 and 3.4 also work normally. Connectopic Mapping doesn't
+support Python 2.
+
+Compile
+-------
+
+Since cython code must be compiled for a specific platform, ``connectopic_mapping`` is distributed as a source distribution; this means a C compiler must be installed.
+
+To compile the cython code and create the installable run:
+::
+
+   unzip connectopic_mapping.zip
+   cd connectopic_mapping
+   python setup.py sdist
+
+Install
+-------
+
+The compilation will create a ``dist`` directory containing ``connectopic_mapping-0.3.0.tar.gz``. To install the package run:
+::
+
+   pip install dist/connectopic_mapping-0.3.0.tar.gz
+

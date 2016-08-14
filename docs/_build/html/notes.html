@@ -1,0 +1,721 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Notes &mdash; Connectopic Mapping 0.3.0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="Connectopic Mapping 0.3.0 documentation" href="index.html"/>
+        <link rel="next" title="Connectopic Mapping API" href="api.html"/>
+        <link rel="prev" title="Run" href="run.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Connectopic Mapping
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.3
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="run.html">Run</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Notes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#fingerprinting">Fingerprinting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#manifold-learning">Manifold learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#results">Results</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#spectral-embedding">Spectral embedding</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#isomap-embedding">Isomap embedding</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Connectopic Mapping API</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">Connectopic Mapping</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Notes</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/notes.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="notes">
+<h1>Notes<a class="headerlink" href="#notes" title="Permalink to this headline">¶</a></h1>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Author:</th><td class="field-body">Michele Damian &lt;<a class="reference external" href="mailto:michele&#46;damian&#37;&#52;&#48;gmail&#46;com">michele<span>&#46;</span>damian<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Version:</th><td class="field-body">0.3.0</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Date:</th><td class="field-body">2016/08/13</td>
+</tr>
+</tbody>
+</table>
+<p>The pipeline provides two variations from Haak and colleagues <a class="footnote-reference" href="#id6" id="id1">[1]</a>. In particular, this algorithm computes the fingerprints in a different way and it provides the option to use tSNE as manifold learning algorithm. The following sections describe in detail the two variations and present the results.</p>
+<div class="section" id="fingerprinting">
+<h2>Fingerprinting<a class="headerlink" href="#fingerprinting" title="Permalink to this headline">¶</a></h2>
+<p>Haak and collegues <a class="footnote-reference" href="#id6" id="id2">[1]</a> compute the fingerprints for each voxel in the ROI as the correlation between the time-serie represented by that voxel and the time-series obtained from a subspace of the voxels outside of the ROI. The procedure is the following: extract the OxT matrix (where O is the number of out-ROI voxels and T the length of the time-serie) from the fMRI image,reduce the out-ROI dimensionality by singular value decomposition (SVD) to obtain a new (T-1)-dimensional subspace from the O-dimensional space, compute the fingerprints as the Pearson&#8217;s correlation coefficients between each in-ROI voxel and the T-1 &#8220;voxels&#8221; from the new subspace.</p>
+<p>The goal of Haak and collegues is to reduce the amount of memory used and build &#8220;good&#8221; fingerprints. (The fingerprints are good if the similarity measure between the fingerprints of two in-ROI voxels is high when the two voxels have the same correlations with the out-ROI voxels, low when the correlations are different). However, when they reduce the space dimensionality, the correlations between in-ROI and out-ROI voxels are lost; the goodness of the fingerprints now depends on the orientation of the subspace relative to the original space. A more natural way to extract good fingerprints is to use the SVD&#8217;s eigenvectors of the entire (in-ROI and out-ROI voxels) space. Since the right eigenvectors provide a mapping between the voxels and the desired subspace, it is possible to use the eta2 coefficients used by Haak and colleagues, this time on the mappings, to compare the voxels.</p>
+<p>This implementation exploits this fact by the following steps: reduce the dimensionality of the N-dimensional space (where N is the number of all the voxels that represent the cortex) by SVD, consider the right eigenvectors associated with the in-ROI voxels as fingerprints. This doesn&#8217;t require computing the Pearson&#8217;s correlation coefficients making the pipeline faster.</p>
+</div>
+<div class="section" id="manifold-learning">
+<h2>Manifold learning<a class="headerlink" href="#manifold-learning" title="Permalink to this headline">¶</a></h2>
+<p>The user can choose to use tSNE <a class="footnote-reference" href="#id7" id="id3">[2]</a> as manifold learning algorithm—instead of spectral embedding or isomap. tSNE is conceived mainly as a visualization algorithm, nevertheless it provides as output clusters of data that are well separated from each other and can be used to find well-defined connectopies. The reason why it is not used as the default is because it is sensitive to noisy data. Despite tSNE consinstently groups the voxels in the same clusters, the position of the clusters on the output dimension changes; in other words, it can visualize well-defined connectopies, but it doesn&#8217;t allow to analytically compare cross-sessions or cross-subjects results. An extension of this pipeline would be to automatically match clusters obtained from different sessions/subjects.</p>
+</div>
+<div class="section" id="results">
+<h2>Results<a class="headerlink" href="#results" title="Permalink to this headline">¶</a></h2>
+<p>The results show equal or better cross-session reproducibility and present specific differences between opposite hemispheres and subjects. The mean normalized root mean squared error (nRMSE) for the first connectopy in Haak and collegues <a class="footnote-reference" href="#id6" id="id4">[1]</a> using spectral embedding is <em>0.061</em> for the left and <em>0.067</em> for the right hemisphere (95% confidence interval of <em>[0.053, 0.070]</em> and <em>[0.056, 0.077]</em> respectively); using isomap is <em>0.039</em> for the left and <em>0.041</em> for the right hemisphere (95% confidence interval of <em>[0.035, 0.043]</em> and <em>[0.037, 0.046]</em> respectively).</p>
+<div class="section" id="spectral-embedding">
+<h3>Spectral embedding<a class="headerlink" href="#spectral-embedding" title="Permalink to this headline">¶</a></h3>
+<p><strong>Cross-session normalized root mean squared error for the left and right hemispheres.</strong></p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="16%" />
+<col width="41%" />
+<col width="43%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head" rowspan="2">Subject</th>
+<th class="head" colspan="2">nRMSE</th>
+</tr>
+<tr class="row-even"><th class="head">Left Hemisphere</th>
+<th class="head">Right Hemisphere</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-odd"><td>100307</td>
+<td>0.02835</td>
+<td>0.03866</td>
+</tr>
+<tr class="row-even"><td>103414</td>
+<td>0.04054</td>
+<td>0.05987</td>
+</tr>
+<tr class="row-odd"><td>105115</td>
+<td>0.02964</td>
+<td>0.03264</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Cross-subject normalized root mean squared error for session 1 and session 2 and for the left and right hemispheres.</strong></p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="13%" />
+<col width="32%" />
+<col width="34%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head" rowspan="2">Subjects</th>
+<th class="head" rowspan="2">Session</th>
+<th class="head" colspan="2">nRMSE</th>
+</tr>
+<tr class="row-even"><th class="head">Left Hemisphere</th>
+<th class="head">Right Hemisphere</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-odd"><td rowspan="2">100307/103414</td>
+<td>1</td>
+<td>0.06109</td>
+<td>0.06267</td>
+</tr>
+<tr class="row-even"><td>2</td>
+<td>0.06161</td>
+<td>0.07023</td>
+</tr>
+<tr class="row-odd"><td rowspan="2">100307/105115</td>
+<td>1</td>
+<td>0.06101</td>
+<td>0.05632</td>
+</tr>
+<tr class="row-even"><td>2</td>
+<td>0.07289</td>
+<td>0.06792</td>
+</tr>
+<tr class="row-odd"><td rowspan="2">103414/105115</td>
+<td>1</td>
+<td>0.05811</td>
+<td>0.06199</td>
+</tr>
+<tr class="row-even"><td>2</td>
+<td>0.08603</td>
+<td>0.10522</td>
+</tr>
+</tbody>
+</table>
+<p>The following images show the connectopic mapping for subjects 100307, 103414 and 105115 from the <a class="reference external" href="https://www.humanconnectome.org">Human Connectome Project</a>. The spatial distribution of the connectopies is very similar to Haak and colleagues&#8217; results.</p>
+<p><strong>Connectopies of subject 100307 from three different planes orthogonal to the X, Y, and Z axes.</strong></p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="7%" />
+<col width="47%" />
+<col width="47%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>&nbsp;</td>
+<td>Left Hemisphire</td>
+<td>Right Hemisphire</td>
+</tr>
+<tr class="row-even"><td>Session 1</td>
+<td><img alt="_images/Connectopies_subject_100307_REST1_planes_X25-Y55-Z69.png" class="first last" src="_images/Connectopies_subject_100307_REST1_planes_X25-Y55-Z69.png" />
+</td>
+<td><img alt="_images/Connectopies_subject_100307_REST1_planes_X66-Y55-Z69.png" class="first last" src="_images/Connectopies_subject_100307_REST1_planes_X66-Y55-Z69.png" />
+</td>
+</tr>
+<tr class="row-odd"><td>Session 2</td>
+<td><img alt="_images/Connectopies_subject_100307_REST2_planes_X25-Y55-Z69.png" class="first last" src="_images/Connectopies_subject_100307_REST2_planes_X25-Y55-Z69.png" />
+</td>
+<td><img alt="_images/Connectopies_subject_100307_REST2_planes_X66-Y55-Z69.png" class="first last" src="_images/Connectopies_subject_100307_REST2_planes_X66-Y55-Z69.png" />
+</td>
+</tr>
+</tbody>
+</table>
+<table border="1" class="docutils">
+<colgroup>
+<col width="7%" />
+<col width="47%" />
+<col width="47%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>&nbsp;</td>
+<td>Left Hemisphire</td>
+<td>Right Hemisphire</td>
+</tr>
+<tr class="row-even"><td>Session 1</td>
+<td><img alt="_images/Connectopies_subject_100307_REST1_planes_X18-Y65-Z50.png" class="first last" src="_images/Connectopies_subject_100307_REST1_planes_X18-Y65-Z50.png" />
+</td>
+<td><img alt="_images/Connectopies_subject_100307_REST1_planes_X73-Y65-Z50.png" class="first last" src="_images/Connectopies_subject_100307_REST1_planes_X73-Y65-Z50.png" />
+</td>
+</tr>
+<tr class="row-odd"><td>Session 2</td>
+<td><img alt="_images/Connectopies_subject_100307_REST2_planes_X18-Y65-Z50.png" class="first last" src="_images/Connectopies_subject_100307_REST2_planes_X18-Y65-Z50.png" />
+</td>
+<td><img alt="_images/Connectopies_subject_100307_REST2_planes_X73-Y65-Z50.png" class="first last" src="_images/Connectopies_subject_100307_REST2_planes_X73-Y65-Z50.png" />
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Connectopies of subject 103414 from three different planes orthogonal to the X, Y, and Z axes.</strong></p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="7%" />
+<col width="47%" />
+<col width="47%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>&nbsp;</td>
+<td>Left Hemisphire</td>
+<td>Right Hemisphire</td>
+</tr>
+<tr class="row-even"><td>Session 1</td>
+<td><img alt="_images/Connectopies_subject_103414_REST1_planes_X25-Y55-Z69.png" class="first last" src="_images/Connectopies_subject_103414_REST1_planes_X25-Y55-Z69.png" />
+</td>
+<td><img alt="_images/Connectopies_subject_103414_REST1_planes_X66-Y55-Z69.png" class="first last" src="_images/Connectopies_subject_103414_REST1_planes_X66-Y55-Z69.png" />
+</td>
+</tr>
+<tr class="row-odd"><td>Session 2</td>
+<td><img alt="_images/Connectopies_subject_103414_REST2_planes_X25-Y55-Z69.png" class="first last" src="_images/Connectopies_subject_103414_REST2_planes_X25-Y55-Z69.png" />
+</td>
+<td><img alt="_images/Connectopies_subject_103414_REST2_planes_X66-Y55-Z69.png" class="first last" src="_images/Connectopies_subject_103414_REST2_planes_X66-Y55-Z69.png" />
+</td>
+</tr>
+</tbody>
+</table>
+<table border="1" class="docutils">
+<colgroup>
+<col width="7%" />
+<col width="47%" />
+<col width="47%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>&nbsp;</td>
+<td>Left Hemisphire</td>
+<td>Right Hemisphire</td>
+</tr>
+<tr class="row-even"><td>Session 1</td>
+<td><img alt="_images/Connectopies_subject_103414_REST1_planes_X18-Y65-Z50.png" class="first last" src="_images/Connectopies_subject_103414_REST1_planes_X18-Y65-Z50.png" />
+</td>
+<td><img alt="_images/Connectopies_subject_103414_REST1_planes_X73-Y65-Z50.png" class="first last" src="_images/Connectopies_subject_103414_REST1_planes_X73-Y65-Z50.png" />
+</td>
+</tr>
+<tr class="row-odd"><td>Session 2</td>
+<td><img alt="_images/Connectopies_subject_103414_REST2_planes_X18-Y65-Z50.png" class="first last" src="_images/Connectopies_subject_103414_REST2_planes_X18-Y65-Z50.png" />
+</td>
+<td><img alt="_images/Connectopies_subject_103414_REST2_planes_X73-Y65-Z50.png" class="first last" src="_images/Connectopies_subject_103414_REST2_planes_X73-Y65-Z50.png" />
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Connectopies of subject 105115 from three different planes orthogonal to the X, Y, and Z axes.</strong></p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="7%" />
+<col width="47%" />
+<col width="47%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>&nbsp;</td>
+<td>Left Hemisphire</td>
+<td>Right Hemisphire</td>
+</tr>
+<tr class="row-even"><td>Session 1</td>
+<td><img alt="_images/Connectopies_subject_105115_REST1_planes_X25-Y55-Z69.png" class="first last" src="_images/Connectopies_subject_105115_REST1_planes_X25-Y55-Z69.png" />
+</td>
+<td><img alt="_images/Connectopies_subject_105115_REST1_planes_X66-Y55-Z69.png" class="first last" src="_images/Connectopies_subject_105115_REST1_planes_X66-Y55-Z69.png" />
+</td>
+</tr>
+<tr class="row-odd"><td>Session 2</td>
+<td><img alt="_images/Connectopies_subject_105115_REST2_planes_X25-Y55-Z69.png" class="first last" src="_images/Connectopies_subject_105115_REST2_planes_X25-Y55-Z69.png" />
+</td>
+<td><img alt="_images/Connectopies_subject_105115_REST2_planes_X66-Y55-Z69.png" class="first last" src="_images/Connectopies_subject_105115_REST2_planes_X66-Y55-Z69.png" />
+</td>
+</tr>
+</tbody>
+</table>
+<table border="1" class="docutils">
+<colgroup>
+<col width="7%" />
+<col width="47%" />
+<col width="47%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>&nbsp;</td>
+<td>Left Hemisphire</td>
+<td>Right Hemisphire</td>
+</tr>
+<tr class="row-even"><td>Session 1</td>
+<td><img alt="_images/Connectopies_subject_105115_REST1_planes_X18-Y65-Z50.png" class="first last" src="_images/Connectopies_subject_105115_REST1_planes_X18-Y65-Z50.png" />
+</td>
+<td><img alt="_images/Connectopies_subject_105115_REST1_planes_X73-Y65-Z50.png" class="first last" src="_images/Connectopies_subject_105115_REST1_planes_X73-Y65-Z50.png" />
+</td>
+</tr>
+<tr class="row-odd"><td>Session 2</td>
+<td><img alt="_images/Connectopies_subject_105115_REST2_planes_X18-Y65-Z50.png" class="first last" src="_images/Connectopies_subject_105115_REST2_planes_X18-Y65-Z50.png" />
+</td>
+<td><img alt="_images/Connectopies_subject_105115_REST2_planes_X73-Y65-Z50.png" class="first last" src="_images/Connectopies_subject_105115_REST2_planes_X73-Y65-Z50.png" />
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="isomap-embedding">
+<h3>Isomap embedding<a class="headerlink" href="#isomap-embedding" title="Permalink to this headline">¶</a></h3>
+<p><strong>Cross-session normalized root mean squared error for the left and right hemispheres.</strong></p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="16%" />
+<col width="41%" />
+<col width="43%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head" rowspan="2">Subject</th>
+<th class="head" colspan="2">nRMSE</th>
+</tr>
+<tr class="row-even"><th class="head">Left Hemisphere</th>
+<th class="head">Right Hemisphere</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-odd"><td>100307</td>
+<td>0.01386</td>
+<td>0.01731</td>
+</tr>
+<tr class="row-even"><td>103414</td>
+<td>0.02312</td>
+<td>0.01691</td>
+</tr>
+<tr class="row-odd"><td>105115</td>
+<td>0.01359</td>
+<td>0.02198</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Cross-subject normalized root mean squared error for session 1 and session 2 and for the left and right hemispheres.</strong></p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="13%" />
+<col width="32%" />
+<col width="34%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head" rowspan="2">Subjects</th>
+<th class="head" rowspan="2">Session</th>
+<th class="head" colspan="2">nRMSE</th>
+</tr>
+<tr class="row-even"><th class="head">Left Hemisphere</th>
+<th class="head">Right Hemisphere</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-odd"><td rowspan="2">100307/103414</td>
+<td>1</td>
+<td>0.02317</td>
+<td>0.01719</td>
+</tr>
+<tr class="row-even"><td>2</td>
+<td>0.02763</td>
+<td>0.02206</td>
+</tr>
+<tr class="row-odd"><td rowspan="2">100307/105115</td>
+<td>1</td>
+<td>0.01925</td>
+<td>0.02431</td>
+</tr>
+<tr class="row-even"><td>2</td>
+<td>0.03177</td>
+<td>0.03437</td>
+</tr>
+<tr class="row-odd"><td rowspan="2">103414/105115</td>
+<td>1</td>
+<td>0.02374</td>
+<td>0.02408</td>
+</tr>
+<tr class="row-even"><td>2</td>
+<td>0.03310</td>
+<td>0.03264</td>
+</tr>
+</tbody>
+</table>
+<p>The following images show the connectopic mapping for subjects 100307, 103414 and 105115 from the <a class="reference external" href="https://www.humanconnectome.org">Human Connectome Project</a>. The spatial distribution of the connectopies is very similar to Haak and colleagues&#8217; results.</p>
+<p><strong>Connectopies of subject 100307 from three different planes orthogonal to the X, Y, and Z axes.</strong></p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="6%" />
+<col width="47%" />
+<col width="47%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>&nbsp;</td>
+<td>Left Hemisphire</td>
+<td>Right Hemisphire</td>
+</tr>
+<tr class="row-even"><td>Session 1</td>
+<td><img alt="_images/Connectopies_subject_100307_REST1_planes_X25-Y55-Z69_isomap.png" class="first last" src="_images/Connectopies_subject_100307_REST1_planes_X25-Y55-Z69_isomap.png" />
+</td>
+<td><img alt="_images/Connectopies_subject_100307_REST1_planes_X66-Y55-Z69_isomap.png" class="first last" src="_images/Connectopies_subject_100307_REST1_planes_X66-Y55-Z69_isomap.png" />
+</td>
+</tr>
+<tr class="row-odd"><td>Session 2</td>
+<td><img alt="_images/Connectopies_subject_100307_REST2_planes_X25-Y55-Z69_isomap.png" class="first last" src="_images/Connectopies_subject_100307_REST2_planes_X25-Y55-Z69_isomap.png" />
+</td>
+<td><img alt="_images/Connectopies_subject_100307_REST2_planes_X66-Y55-Z69_isomap.png" class="first last" src="_images/Connectopies_subject_100307_REST2_planes_X66-Y55-Z69_isomap.png" />
+</td>
+</tr>
+</tbody>
+</table>
+<table border="1" class="docutils">
+<colgroup>
+<col width="6%" />
+<col width="47%" />
+<col width="47%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>&nbsp;</td>
+<td>Left Hemisphire</td>
+<td>Right Hemisphire</td>
+</tr>
+<tr class="row-even"><td>Session 1</td>
+<td><img alt="_images/Connectopies_subject_100307_REST1_planes_X18-Y65-Z50_isomap.png" class="first last" src="_images/Connectopies_subject_100307_REST1_planes_X18-Y65-Z50_isomap.png" />
+</td>
+<td><img alt="_images/Connectopies_subject_100307_REST1_planes_X73-Y65-Z50_isomap.png" class="first last" src="_images/Connectopies_subject_100307_REST1_planes_X73-Y65-Z50_isomap.png" />
+</td>
+</tr>
+<tr class="row-odd"><td>Session 2</td>
+<td><img alt="_images/Connectopies_subject_100307_REST2_planes_X18-Y65-Z50_isomap.png" class="first last" src="_images/Connectopies_subject_100307_REST2_planes_X18-Y65-Z50_isomap.png" />
+</td>
+<td><img alt="_images/Connectopies_subject_100307_REST2_planes_X73-Y65-Z50_isomap.png" class="first last" src="_images/Connectopies_subject_100307_REST2_planes_X73-Y65-Z50_isomap.png" />
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Connectopies of subject 103414 from three different planes orthogonal to the X, Y, and Z axes.</strong></p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="6%" />
+<col width="47%" />
+<col width="47%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>&nbsp;</td>
+<td>Left Hemisphire</td>
+<td>Right Hemisphire</td>
+</tr>
+<tr class="row-even"><td>Session 1</td>
+<td><img alt="_images/Connectopies_subject_103414_REST1_planes_X25-Y55-Z69_isomap.png" class="first last" src="_images/Connectopies_subject_103414_REST1_planes_X25-Y55-Z69_isomap.png" />
+</td>
+<td><img alt="_images/Connectopies_subject_103414_REST1_planes_X66-Y55-Z69_isomap.png" class="first last" src="_images/Connectopies_subject_103414_REST1_planes_X66-Y55-Z69_isomap.png" />
+</td>
+</tr>
+<tr class="row-odd"><td>Session 2</td>
+<td><img alt="_images/Connectopies_subject_103414_REST2_planes_X25-Y55-Z69_isomap.png" class="first last" src="_images/Connectopies_subject_103414_REST2_planes_X25-Y55-Z69_isomap.png" />
+</td>
+<td><img alt="_images/Connectopies_subject_103414_REST2_planes_X66-Y55-Z69_isomap.png" class="first last" src="_images/Connectopies_subject_103414_REST2_planes_X66-Y55-Z69_isomap.png" />
+</td>
+</tr>
+</tbody>
+</table>
+<table border="1" class="docutils">
+<colgroup>
+<col width="6%" />
+<col width="47%" />
+<col width="47%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>&nbsp;</td>
+<td>Left Hemisphire</td>
+<td>Right Hemisphire</td>
+</tr>
+<tr class="row-even"><td>Session 1</td>
+<td><img alt="_images/Connectopies_subject_103414_REST1_planes_X18-Y65-Z50_isomap.png" class="first last" src="_images/Connectopies_subject_103414_REST1_planes_X18-Y65-Z50_isomap.png" />
+</td>
+<td><img alt="_images/Connectopies_subject_103414_REST1_planes_X73-Y65-Z50_isomap.png" class="first last" src="_images/Connectopies_subject_103414_REST1_planes_X73-Y65-Z50_isomap.png" />
+</td>
+</tr>
+<tr class="row-odd"><td>Session 2</td>
+<td><img alt="_images/Connectopies_subject_103414_REST2_planes_X18-Y65-Z50_isomap.png" class="first last" src="_images/Connectopies_subject_103414_REST2_planes_X18-Y65-Z50_isomap.png" />
+</td>
+<td><img alt="_images/Connectopies_subject_103414_REST2_planes_X73-Y65-Z50_isomap.png" class="first last" src="_images/Connectopies_subject_103414_REST2_planes_X73-Y65-Z50_isomap.png" />
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Connectopies of subject 105115 from three different planes orthogonal to the X, Y, and Z axes.</strong></p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="6%" />
+<col width="47%" />
+<col width="47%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>&nbsp;</td>
+<td>Left Hemisphire</td>
+<td>Right Hemisphire</td>
+</tr>
+<tr class="row-even"><td>Session 1</td>
+<td><img alt="_images/Connectopies_subject_105115_REST1_planes_X25-Y55-Z69_isomap.png" class="first last" src="_images/Connectopies_subject_105115_REST1_planes_X25-Y55-Z69_isomap.png" />
+</td>
+<td><img alt="_images/Connectopies_subject_105115_REST1_planes_X66-Y55-Z69_isomap.png" class="first last" src="_images/Connectopies_subject_105115_REST1_planes_X66-Y55-Z69_isomap.png" />
+</td>
+</tr>
+<tr class="row-odd"><td>Session 2</td>
+<td><img alt="_images/Connectopies_subject_105115_REST2_planes_X25-Y55-Z69_isomap.png" class="first last" src="_images/Connectopies_subject_105115_REST2_planes_X25-Y55-Z69_isomap.png" />
+</td>
+<td><img alt="_images/Connectopies_subject_105115_REST2_planes_X66-Y55-Z69_isomap.png" class="first last" src="_images/Connectopies_subject_105115_REST2_planes_X66-Y55-Z69_isomap.png" />
+</td>
+</tr>
+</tbody>
+</table>
+<table border="1" class="docutils">
+<colgroup>
+<col width="6%" />
+<col width="47%" />
+<col width="47%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>&nbsp;</td>
+<td>Left Hemisphire</td>
+<td>Right Hemisphire</td>
+</tr>
+<tr class="row-even"><td>Session 1</td>
+<td><img alt="_images/Connectopies_subject_105115_REST1_planes_X18-Y65-Z50_isomap.png" class="first last" src="_images/Connectopies_subject_105115_REST1_planes_X18-Y65-Z50_isomap.png" />
+</td>
+<td><img alt="_images/Connectopies_subject_105115_REST1_planes_X73-Y65-Z50_isomap.png" class="first last" src="_images/Connectopies_subject_105115_REST1_planes_X73-Y65-Z50_isomap.png" />
+</td>
+</tr>
+<tr class="row-odd"><td>Session 2</td>
+<td><img alt="_images/Connectopies_subject_105115_REST2_planes_X18-Y65-Z50_isomap.png" class="first last" src="_images/Connectopies_subject_105115_REST2_planes_X18-Y65-Z50_isomap.png" />
+</td>
+<td><img alt="_images/Connectopies_subject_105115_REST2_planes_X73-Y65-Z50_isomap.png" class="first last" src="_images/Connectopies_subject_105115_REST2_planes_X73-Y65-Z50_isomap.png" />
+</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="id6" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[1]</td><td><em>(<a class="fn-backref" href="#id1">1</a>, <a class="fn-backref" href="#id2">2</a>, <a class="fn-backref" href="#id4">3</a>)</em> Haak et al., &#8220;Connectopic mapping with resting-state fMRI&#8221;, 2016</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="id7" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id3">[2]</a></td><td>Van der Maaten, Hilton, &#8220;Visualizing High-Dimensional Data Using t-SNE&#8221;, 2008</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="api.html" class="btn btn-neutral float-right" title="Connectopic Mapping API" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="run.html" class="btn btn-neutral" title="Run" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Michele Damian.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.3.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
