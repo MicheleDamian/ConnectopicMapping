@@ -14,7 +14,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 setup(
     name='connectopic_mapping',
 
-    version='0.3.0br1',
+    version='0.3.0',
 
     description='Connectopic mapping',
     long_description=long_description,
@@ -37,10 +37,10 @@ setup(
 
     #packages=find_packages(exclude=['contrib', 'docs', 'tests']),
 
-    py_modules=["connectopic_mapping"],
+    packages=['connectopic_mapping'],
 
     cmdclass={'build_ext': build_ext},
 
-    ext_modules=[Extension("haak", ["haak.pyx"], include_dirs=[numpy.get_include()])]
+    ext_modules=[Extension("connectopic_mapping.haak", ["connectopic_mapping/haak.pyx"], include_dirs=[numpy.get_include()])]
 
 )

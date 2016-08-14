@@ -2,14 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="abe506c2-6bc3-4106-911f-09e531799589" name="Default" comment="">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/build/temp.macosx-10.5-x86_64-3.5/cutils.o" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/misc/cutils.c" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/misc/cutils.cpython-35m-darwin.so" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/misc/cutils.html" afterPath="" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/connectopic_mapping/README.rst" afterPath="$PROJECT_DIR$/README.rst" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/connectopic_mapping/setup.py" afterPath="$PROJECT_DIR$/setup.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/connectopic_mapping/haak.pyx" afterPath="$PROJECT_DIR$/connectopic_mapping/haak.pyx" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/connectopic_mapping/setup.py" afterPath="$PROJECT_DIR$/connectopic_mapping/setup.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/run.py" afterPath="$PROJECT_DIR$/run.py" />
     </list>
     <list id="a8d7c31b-cd33-4e1c-b4b1-e5cb17500efa" name="First commit" comment="Include all FSL file. connectopic_mapping.npy implements version 1 of haak paper." />
     <ignored path="Src.iws" />
@@ -46,7 +41,7 @@
       <file leaf-file-name="haak.pyx" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/connectopic_mapping/haak.pyx">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-10.62963">
+            <state vertical-scroll-proportion="-157.77777">
               <caret line="284" column="36" selection-start-line="284" selection-start-column="36" selection-end-line="284" selection-end-column="36" />
               <folding>
                 <element signature="e#54#91#0" expanded="true" />
@@ -56,7 +51,7 @@
         </entry>
       </file>
       <file leaf-file-name="README.rst" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/connectopic_mapping/README.rst">
+        <entry file="file://$PROJECT_DIR$/README.rst">
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.0">
               <caret line="5" column="17" selection-start-line="5" selection-start-column="17" selection-end-line="5" selection-end-column="17" />
@@ -78,10 +73,10 @@
         </entry>
       </file>
       <file leaf-file-name="setup.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/connectopic_mapping/setup.py">
+        <entry file="file://$PROJECT_DIR$/setup.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.7233502">
-              <caret line="43" column="85" selection-start-line="43" selection-start-column="85" selection-end-line="43" selection-end-column="85" />
+            <state vertical-scroll-proportion="1.6370559">
+              <caret line="43" column="77" selection-start-line="43" selection-start-column="77" selection-end-line="43" selection-end-column="77" />
               <folding>
                 <element signature="e#0#23#0" expanded="true" />
               </folding>
@@ -97,6 +92,16 @@
               <folding>
                 <element signature="e#59#71#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="__init__.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/connectopic_mapping/__init__.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.0">
+              <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -127,6 +132,7 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="Python Script" />
+        <option value="Setup Script" />
       </list>
     </option>
   </component>
@@ -168,16 +174,17 @@
         <option value="$PROJECT_DIR$/utils.pyx" />
         <option value="$PROJECT_DIR$/config.json" />
         <option value="$PROJECT_DIR$/connectopies_projection.py" />
-        <option value="$PROJECT_DIR$/setup.py" />
         <option value="$PROJECT_DIR$/test_compute_similarity_map.py" />
         <option value="$PROJECT_DIR$/connectopic_mapping/haak.py" />
         <option value="$PROJECT_DIR$/cutils.pyx" />
-        <option value="$PROJECT_DIR$/connectopic_mapping/README.rst" />
         <option value="$PROJECT_DIR$/connectopic_mapping/utils.py" />
         <option value="$PROJECT_DIR$/connectopic_mapping/__init__.py" />
-        <option value="$PROJECT_DIR$/connectopic_mapping/setup.py" />
         <option value="$PROJECT_DIR$/run.py" />
         <option value="$PROJECT_DIR$/connectopic_mapping/haak.pyx" />
+        <option value="$PROJECT_DIR$/connectopic_mapping/README.rst" />
+        <option value="$PROJECT_DIR$/connectopic_mapping/setup.py" />
+        <option value="$PROJECT_DIR$/setup.py" />
+        <option value="$PROJECT_DIR$/MANIFEST" />
       </list>
     </option>
   </component>
@@ -243,20 +250,6 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
-              <option name="myItemId" value="misc" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="Src" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="Src" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
               <option name="myItemId" value="connectopic_mapping" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
@@ -296,9 +289,9 @@
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/misc" />
       <recent name="$PROJECT_DIR$" />
       <recent name="$PROJECT_DIR$/connectopic_mapping" />
+      <recent name="$PROJECT_DIR$/misc" />
     </key>
   </component>
   <component name="RunManager" selected="Python.test_compute_similarity_map">
@@ -715,7 +708,13 @@
       <option name="project" value="LOCAL" />
       <updated>1470539284125</updated>
     </task>
-    <option name="localTasksCounter" value="30" />
+    <task id="LOCAL-00030" summary="Updated setup to compile cython in Haak. Fixed fingerprint_idx bound in compute_similarity_map().">
+      <created>1470711272405</created>
+      <option name="number" value="00030" />
+      <option name="project" value="LOCAL" />
+      <updated>1470711272405</updated>
+    </task>
+    <option name="localTasksCounter" value="31" />
     <servers />
   </component>
   <component name="TodoView" selected-index="1">
@@ -729,9 +728,9 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="23" width="1280" height="719" extended-state="6" />
-    <editor active="true" />
+    <editor active="false" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.13327949" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.13327949" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.2576" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3276923" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.2923077" sideWeight="0.5092025" order="6" side_tool="true" content_ui="tabs" />
@@ -763,7 +762,6 @@
     <option name="myLimit" value="2678400000" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Last commit before merging branch to master." />
     <MESSAGE value="Changed manifold learning algorithm from spectral embedding to tSNE." />
     <MESSAGE value="Better comments." />
     <MESSAGE value="Fixed similarity-&gt;distance transformation. Changed manifold learning to 3 dimensions. Changed visualization color space to RGB, where each channel corresponds to a tSNE output dimension." />
@@ -788,7 +786,8 @@
     <MESSAGE value="Improved documentation for Sphinx translation." />
     <MESSAGE value="PyCharm config changes." />
     <MESSAGE value="Integrated cython similarity map into Haak." />
-    <option name="LAST_COMMIT_MESSAGE" value="Integrated cython similarity map into Haak." />
+    <MESSAGE value="Updated setup to compile cython in Haak. Fixed fingerprint_idx bound in compute_similarity_map()." />
+    <option name="LAST_COMMIT_MESSAGE" value="Updated setup to compile cython in Haak. Fixed fingerprint_idx bound in compute_similarity_map()." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -1031,37 +1030,11 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/connectopic_mapping/README.rst">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="5" column="17" selection-start-line="5" selection-start-column="17" selection-end-line="5" selection-end-column="17" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/connectopic_mapping/__init__.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/config.json">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="-3.125">
           <caret line="5" column="21" selection-start-line="5" selection-start-column="21" selection-end-line="5" selection-end-column="21" />
           <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/run.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="145" column="0" selection-start-line="145" selection-start-column="0" selection-end-line="145" selection-end-column="0" />
-          <folding>
-            <element signature="e#240#251#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -1091,16 +1064,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/connectopic_mapping/utils.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="313" column="34" selection-start-line="313" selection-start-column="34" selection-end-line="313" selection-end-column="34" />
-          <folding>
-            <element signature="e#59#71#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/misc/connectopies_projection.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
@@ -1119,7 +1082,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/connectopic_mapping/haak.pyx">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-10.62963">
+        <state vertical-scroll-proportion="-157.77777">
           <caret line="284" column="36" selection-start-line="284" selection-start-column="36" selection-end-line="284" selection-end-column="36" />
           <folding>
             <element signature="e#54#91#0" expanded="true" />
@@ -1127,10 +1090,54 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/connectopic_mapping/setup.py">
+    <entry file="file://$PROJECT_DIR$/connectopic_mapping/utils.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.7233502">
-          <caret line="43" column="85" selection-start-line="43" selection-start-column="85" selection-end-line="43" selection-end-column="85" />
+        <state vertical-scroll-proportion="0.0">
+          <caret line="313" column="34" selection-start-line="313" selection-start-column="34" selection-end-line="313" selection-end-column="34" />
+          <folding>
+            <element signature="e#59#71#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/run.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="145" column="0" selection-start-line="145" selection-start-column="0" selection-end-line="145" selection-end-column="0" />
+          <folding>
+            <element signature="e#240#251#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/connectopic_mapping/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.rst">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="5" column="17" selection-start-line="5" selection-start-column="17" selection-end-line="5" selection-end-column="17" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/MANIFEST">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/setup.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="1.6370559">
+          <caret line="43" column="77" selection-start-line="43" selection-start-column="77" selection-end-line="43" selection-end-column="77" />
           <folding>
             <element signature="e#0#23#0" expanded="true" />
           </folding>
