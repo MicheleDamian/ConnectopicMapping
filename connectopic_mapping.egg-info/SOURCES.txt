@@ -1,0 +1,11 @@
+MANIFEST.in
+README.rst
+setup.py
+connectopic_mapping/__init__.py
+connectopic_mapping/haak.pyx
+connectopic_mapping/utils.py
+connectopic_mapping.egg-info/PKG-INFO
+connectopic_mapping.egg-info/SOURCES.txt
+connectopic_mapping.egg-info/dependency_links.txt
+connectopic_mapping.egg-info/requires.txt
+connectopic_mapping.egg-info/top_level.txt
