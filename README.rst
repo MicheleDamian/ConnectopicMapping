@@ -1,9 +1,7 @@
 Connectopic Mapping
 ===================
 
-This module contains the tools to extract a connectopic mapping from resting state
-    fMRI data. The pipeline used is based on Haak et al. paper "Connectopic Mapping
-    with resting state fMRI", 2016.
+This module contains the tools to extract a connectopic mapping from resting state fMRI data. The pipeline used is based on Haak et al. paper "Connectopic Mapping with resting state fMRI", 2016.
 
 Dependencies
 ------------
