@@ -5,7 +5,7 @@
   "scans": ["LR", "RL"],
   "hemisphere": "LH",
 
-  "nifti_dir_path": "/Users/michele/Development/Workspaces/UpWork/Morgan_Hough/Resources/rfMRI/100307_REST1",
+  "nifti_dir_path": "path/to/rfMRI/data",
 
   "atlas_name": "cort-maxprob-thr25-2mm",
   "roi_name": "Precentral Gyrus",
@@ -14,7 +14,7 @@
   "num_processes": "cpu",
   "manifold_learning": "isomap",
   "manifold_components": 1,
-  "out_path": "/Users/michele/Development/Workspaces/UpWork/Morgan_Hough/Results/connectopic_mapping/manifold_v2",
+  "out_path": "path/to/output",
   "verbose": 1,
 
   "figures":
