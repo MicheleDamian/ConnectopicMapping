@@ -11,10 +11,6 @@ from sklearn import manifold
 cimport numpy
 cimport cython
 
-__author__ = "Michele Damian"
-__email__ = "michele.damian@gmail.com"
-__version__ = "0.3.0br1"
-
 
 class Haak:
     """Extract grey matter connectopies from resting state fMRI data.

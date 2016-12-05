@@ -1,4 +1,2 @@
 include MANIFEST.in
-include scripts/config.json
 include *.rst
-graft docs/_build/html

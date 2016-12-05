@@ -14,10 +14,6 @@ import numpy
 from connectopic_mapping import haak, utils
 from matplotlib import pyplot
 
-__author__ = "Michele Damian"
-__email__ = "michele.damian@gmail.com"
-__version__ = "0.3.0br1"
-
 with open('config.json') as config_file:
     config = json.load(config_file)
 

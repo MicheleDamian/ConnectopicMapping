@@ -1,10 +1,6 @@
 Run
 ===
 
-:Author: Michele Damian <michele.damian@gmail.com>
-:Version: 0.3.0
-:Date: 2016/08/13
-
 To run the pipeline simply create an object of the class :py:class:`connectopic_mapping.Haak` and then call :py:meth:`connectopic_mapping.Haak.fit_transorm` to extract the connectopies.
 
 Haak pipeline

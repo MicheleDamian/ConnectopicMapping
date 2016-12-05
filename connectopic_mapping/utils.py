@@ -6,11 +6,6 @@ from matplotlib import pyplot
 from mpl_toolkits.axes_grid1 import Grid
 from nilearn import datasets, image
 
-__author__ = "Michele Damian"
-__email__ = "michele.damian@gmail.com"
-__version__ = "0.3.0br1"
-
-
 def load_masks(dataset, roi_label, hemisphere, remove_white_matter=True):
     """Load brain and region of interest (ROI) masks.
 

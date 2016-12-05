@@ -1,21 +1,17 @@
 Connectopic Mapping
 ===================
 
-:Author: Michele Damian
-:Contact: michele.damian@gmail.com
-:Date: 2016-08-06
-:Version: 0.3.0br1
-
-This module contains the tools to extract a connectopic mapping of the brain
-from resting state fMRI data. The pipeline used is based on Haak et al. paper
-"Connectopic Mapping with resting state fMRI", 2016.
+This module contains the tools to extract a connectopic mapping from resting state
+    fMRI data. The pipeline used is based on Haak et al. paper "Connectopic Mapping
+    with resting state fMRI", 2016.
 
 Dependencies
 ------------
 
-The following are the dependencies' lower versions tested to work:
+Connectoptic mapping requires:
 
 - `Python <http://www.python.org/>`_ (>= 3.5.1)
+- `Cython <http://cython.org/>`_ (>= 0.24.1)
 - `Numpy <http://www.numpy.org/>`_ (>= 1.6.1)
 - `Scipy <http://www.scipy.org/>`_ (>= 0.16)
 - `Matplotlib <http://www.matplotlib.org/>`_ (>= 1.5.1)
@@ -24,18 +20,27 @@ The following are the dependencies' lower versions tested to work:
 - `Nilearn <http://nilearn.github.io/>`_ (>= 0.2.4)
 - `GPy <https://github.com/SheffieldML/GPy/>`_ (>= 1.0.7)
 
-Even if it is recommended to install Python 3.5, it is possible that
-Python 3.1, 3.2, 3.3 and 3.4 also work normally. Connectopic mapping doesn't
-support Python 2.
+If these packages are not present in the system they will be installed by pip during the installation process.
+
+Even if it is recommended to install Python 3.5, it is possible that Python 3.1, 3.2, 3.3 and 3.4 also work normally. ConnectopicMapping doesn't support Python 2.
+
+Compile
+-------
+
+Since cython code must be compiled for a specific platform, ``connectopic_mapping`` is distributed as a source distribution; this means a C compiler (e.g. gcc) must be installed in the system.
+
+To compile the code and create the installable run:
+::
+
+   $ unzip connectopic_mapping.zip
+   $ cd connectopic_mapping
+   $ python setup.py sdist
 
 Install
 -------
 
-To install the package save the folder `connectopic_mapping` on your hard drive
-and run:
+The compilation will create a ``dist`` directory containing ``connectopic_mapping-0.3.0.tar.gz``. To install the package run:
 ::
 
-   pip install connectopic_mapping
+   $ pip install dist/connectopic_mapping-0.3.0.tar.gz
 
-Alternatively, it is possible to just add the same folder to the `PYTHONPATH`
-without installing it.

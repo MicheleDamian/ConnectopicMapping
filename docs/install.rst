@@ -1,10 +1,6 @@
 Installation
 ============
 
-:Author: Michele Damian <michele.damian@gmail.com>
-:Version: 0.3.0
-:Date: 2016/08/13
-
 Dependencies
 ------------
 
@@ -22,14 +18,12 @@ Connectoptic mapping requires:
 
 If these packages are not present in the system they will be installed by pip during the installation process.
 
-Even if it is recommended to install Python 3.5, it is possible that
-Python 3.1, 3.2, 3.3 and 3.4 also work normally. Connectopic Mapping doesn't
-support Python 2.
+Even if it is recommended to install Python 3.5, it is possible that Python 3.1, 3.2, 3.3 and 3.4 also work normally. Connectopic Mapping doesn't support Python 2.
 
 Compile
 -------
 
-Since cython code must be compiled for a specific platform, ``connectopic_mapping`` is distributed as a source distribution; this means a C compiler must be installed.
+Since cython code must be compiled for a specific platform, ``connectopic_mapping`` is distributed as a source distribution; this means a C compiler (e.g. gcc) must be installed in the system.
 
 To compile the code and create the installable run:
 ::

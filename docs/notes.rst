@@ -1,10 +1,6 @@
 Notes
 =====
 
-:Author: Michele Damian <michele.damian@gmail.com>
-:Version: 0.3.0
-:Date: 2016/08/13
-
 The pipeline provides two variations from Haak and colleagues [1]_. In particular, this algorithm computes the fingerprints in a different way and it provides the option to use tSNE as manifold learning algorithm. The following sections describe in detail the two variations and present the results.
 
 Fingerprinting
