@@ -459,15 +459,19 @@ def save_nifti(file_path, data, mask, affine=None, zooms=[2,2,2]):
         affine = [[-2, 0, 0,  90],
                   [0, 2, 0, -126],
                   [0, 0, 2, -72],
-                  [0, 0, 0, 0]]
+                  [0, 0, 0, 1]]
 
     # Set voxels values
     coords = numpy.where(mask)
     out = numpy.zeros(mask.shape)
-    out[coords] = data
+    out[coords] = numpy.asarray(data, dtype=numpy.float32)
+    out = numpy.flip(out, axis=0)
 
     # Transform connectopic map into Nifti image
     nifti = nibabel.Nifti1Image(out, affine)
-    nifti.header.set_data_dtype(numpy.float64)
+    nifti.header.set_data_dtype(numpy.float32)
     nifti.header.set_zooms(zooms)
+    nifti.header['qform_code'] = 4
+    nifti.header['sform_code'] = 4
+    nifti.header['xyzt_units'] = 10
     nifti.to_filename(file_path)
